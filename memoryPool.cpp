@@ -124,10 +124,37 @@ public:
     {
         return pool.deallocate(p);
     }
+
+    // append child to the children head, the link name is 'sibling_next'
+    void append_child(u_int64_t boardB, u_int64_t boardW )
+    {
+        vnode *new_head = new vnode();
+        new_head->boardB = boardB;
+        new_head->boardW = boardW;
+        new_head->sibling_next = children_head;
+        children_head = new_head; 
+    }
+
+    // remove the last child in the children_head list
+    void remove_child(vnode * child)
+    {
+        if(children_head != nullptr)
+        {
+            delete(children_head);
+            children_head = children_head->sibling_next;
+        }
+    }
+    // always point to the head of the children list
+    vnode * get_children()
+    {
+        return children_head;
+    }
 };
 
 
 MemoryPool vnode::pool = MemoryPool(sizeof(vnode),100000);
+
+
 void test()
 {
     vnode * list  = NULL;
@@ -148,26 +175,34 @@ void test()
     //     tmplist = tmplist->left;
     // }
 
-    vnode * parent =new vnode();
     vnode * new_head = new vnode();
 
 
-    for(int i =0; i <435; ++i)
+    // this is a routine to simulate addition of sibling to the children head
+    for(int i =0; i <3; ++i)
     {
-        new_head = new vnode();
-        new_head->boardB = i;
-        new_head->sibling_next = parent->children_head;
-        parent->children_head = new_head; //add sibling
+        new_head->append_child(i, i);
 
     }
 
-    vnode * asd = parent->children_head;
+    // to simulate the rollout of the children
+    vnode * asd = new_head->get_children();
     while(asd != nullptr)
     {
         std::cout<< asd->boardB<<std::endl;
         asd = asd->sibling_next;
     }
     
+    new_head->remove_child(asd);
+
+       vnode * asd2 = new_head->get_children();
+       std::cout<<"second:"<<std::endl;
+    while(asd2!= nullptr)
+    {
+        std::cout<< asd2->boardB<<std::endl;
+        asd2 = asd2->sibling_next;
+    }
+
     std::cout<<"size of vnode:"<< sizeof(vnode);
 
 }
