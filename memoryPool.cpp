@@ -125,7 +125,7 @@ public:
         return pool.deallocate(p);
     }
 
-    // append child to the children head, the link name is 'sibling_next'
+    // append child to the children head, the link name is 'sibling_next', append both black and white bitboards
     void append_child(u_int64_t boardB, u_int64_t boardW )
     {
         vnode *new_head = new vnode();
@@ -135,13 +135,37 @@ public:
         children_head = new_head; 
     }
 
-    // remove the last child in the children_head list
-    void remove_child(vnode * child)
+    // remove the last child in the children_head list, First-in-first-out style
+    void remove_child()
     {
         if(children_head != nullptr)
         {
             delete(children_head);
             children_head = children_head->sibling_next;
+        }
+    }
+
+    // remove the specific child in the children_head list
+    void remove_child(vnode * node)
+    {
+        if(node != nullptr)
+        {
+            vnode * ptr = children_head;
+            vnode * prev = nullptr;
+            while(ptr != nullptr )
+            {
+                if(ptr == node)
+                {
+                    if(prev == nullptr)
+                        children_head = ptr->sibling_next;
+                    else
+                        prev -> sibling_next = ptr -> sibling_next;
+                    delete(node);
+                    break;
+                }
+                prev = ptr;
+                ptr = ptr->sibling_next;
+            }
         }
     }
     // always point to the head of the children list
@@ -175,32 +199,47 @@ void test()
     //     tmplist = tmplist->left;
     // }
 
-    vnode * new_head = new vnode();
+    vnode * parent_node = new vnode();
 
-
+    std::cout<<"start:"<<std::endl;
     // this is a routine to simulate addition of sibling to the children head
-    for(int i =0; i <3; ++i)
+    for(int i =0; i <50; ++i)
     {
-        new_head->append_child(i, i);
+        parent_node->append_child(i, i);
 
     }
+    std::cout<<"done:"<<std::endl;
 
     // to simulate the rollout of the children
-    vnode * asd = new_head->get_children();
+    vnode * asd = parent_node->get_children();
     while(asd != nullptr)
     {
         std::cout<< asd->boardB<<std::endl;
         asd = asd->sibling_next;
     }
     
-    new_head->remove_child(asd);
+    // parent_node->remove_child();
+    //     parent_node->remove_child();
 
-       vnode * asd2 = new_head->get_children();
+       vnode * asd2 = parent_node->get_children();
        std::cout<<"second:"<<std::endl;
+       int n = 0;
     while(asd2!= nullptr)
+    {
+                if( n == 20) parent_node-> remove_child(asd2);
+        std::cout<< asd2->boardB<<std::endl;
+        asd2 = asd2->sibling_next;
+
+        n++;
+    }
+       std::cout<<"third:"<<std::endl;
+asd2 = parent_node->get_children();
+        while(asd2!= nullptr)
     {
         std::cout<< asd2->boardB<<std::endl;
         asd2 = asd2->sibling_next;
+
+        n++;
     }
 
     std::cout<<"size of vnode:"<< sizeof(vnode);
