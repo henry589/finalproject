@@ -114,11 +114,6 @@ public:
     vnode *sibling_next=nullptr; 
     vnode *link_next = nullptr; // for deletion queue use only
     vnode (){
-        parent=nullptr;
-        children_head=nullptr;
-        sibling_next=nullptr; 
-        boardB = 0;
-        boardW = 0;
     }
     static MemoryPool pool;
     u_int64_t boardB;
@@ -133,7 +128,7 @@ public:
         return pool.deallocate(p);
     }
 
-    void delete_subtree(vnode * node)
+    static void delete_subtree(vnode * node)
     {
         vnode * deletion_queue = nullptr;
         vnode * enqueue_ptr = nullptr;
@@ -163,10 +158,10 @@ public:
             }
 
             vnode * ptr = deletion_queue;
-            // std::cout <<"childlist:"<<std::endl;
+            std::cout <<"childlist:"<<std::endl;
             while(ptr != nullptr)
             {
-                // std::cout<<"c:"<<ptr->boardB<<",p:"<<ptr->parent->boardB<<std::endl;
+                std::cout<<"c:"<<ptr->boardB<<",p:"<<ptr->parent->boardB<<std::endl;
                 ptr = ptr -> sibling_next;
             }
             //deque to start delete child
@@ -178,7 +173,7 @@ public:
                 deletion_queue = deletion_queue->link_next;
                 remove_child(dequeue_ptr);
                 delete(dequeue_ptr);
-                // std::cout<<"successfully deleted:"<<dequeue_ptr->boardB<<std::endl;
+                std::cout<<"successfully deleted:"<<dequeue_ptr->boardB<<std::endl;
                 // if(deletion_queue != nullptr)
                 // std::cout<<"latest q head:"<<deletion_queue->boardB<<std::endl;
             }
@@ -209,26 +204,26 @@ public:
     }
 
     // remove the specific child in the children_head list
-    void remove_child(vnode * node)
+    static void remove_child(vnode * node)
     {
-        if(node != nullptr)
+        if(node != nullptr && node->parent != nullptr)
         {
-            vnode * ptr = children_head;
+            vnode * ptr = node->parent->children_head;
             vnode * prev_node = nullptr;
             while(ptr != nullptr )
             {
-                                    // std::cout<<"info:"<<ptr->boardB<<std::endl;
+                                    std::cout<<"info:"<<ptr->boardB<<std::endl;
 
                 if(ptr == node)
                 {
                     // removal of first child
                     if(prev_node == nullptr)
-                        children_head = ptr->sibling_next;
+                        node->parent->children_head = ptr->sibling_next;
                     else
                         prev_node -> sibling_next = ptr -> sibling_next;
 
                     delete(node);
-                    // std::cout<<"successfully remove child:"<<node->boardB<<std::endl;
+                    std::cout<<"successfully remove child:"<<node->boardB<<std::endl;
                     break;
                 }
                 prev_node = ptr;
@@ -294,15 +289,19 @@ void test()
        int n = 0;
     while(asd2!= nullptr)
     {
-                // if( n == 0) parent_node-> remove_child(asd2);
+                if( n == 0) vnode::remove_child(asd2);
         std::cout<< asd2->boardB<<std::endl;
         asd2 = asd2->sibling_next;
 
         n++;
     }
+    vnode::remove_child(parent_node);
        std::cout<<"third:"<<std::endl;
 asd2 = parent_node->get_children();
     vnode * selected_node = nullptr;
+    vnode * nextGen = nullptr;
+        vnode * nextnextGen = nullptr;
+
     n = 0;
         while(asd2!= nullptr)
     {
@@ -312,10 +311,16 @@ asd2 = parent_node->get_children();
         if(n == 3) 
         {
             selected_node =asd2;
-            // selected_node->append_child(0x88,0x76);
-            //             selected_node->append_child(0x89,0x76);
+            selected_node->append_child(0x88,0x76);
+                        selected_node->append_child(0x89,0x76);
 
-            // selected_node->append_child(0x8A,0x76);
+            selected_node->append_child(0x8A,0x76);
+            nextGen = selected_node->get_children();
+            nextGen->append_child(0x92,0x92);
+            nextGen->append_child(0x93,0x93);
+            nextnextGen = nextGen->get_children();
+            nextnextGen->append_child(0x832,0x00);
+            nextnextGen->append_child(0x123,0x00);
 
         }
         n++;
@@ -323,8 +328,8 @@ asd2 = parent_node->get_children();
 
        std::cout<<"delete subtree simulation:"<<"sel node:"<<selected_node->boardB<<std::endl;
 
-    selected_node->delete_subtree(selected_node);
-    asd2 = selected_node->get_children();
+    vnode::delete_subtree(selected_node);
+    // asd2 = selected_node->get_children();
 
 
     // while(asd2!= nullptr)
@@ -337,6 +342,8 @@ asd2 = parent_node->get_children();
        std::cout<<"selected node:"<<selected_node->boardB<<std::endl;
 
        asd2 = selected_node->get_children();
+            //   asd2 = nextnextGen->get_children();
+
     while(asd2!= nullptr)
     {
         std::cout<< asd2->boardB<<",parent:"<<asd2->parent->boardB<<std::endl;
