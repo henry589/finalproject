@@ -107,18 +107,10 @@ private:
 
 class vnode{
 private:
-    vnode *link_next = nullptr; // for deletion queue use only
-   // remove the last child in the children_head list, First-in-first-out style
-    // void remove_node()
-    // {
-    //     if(children_head != nullptr)
-    //     {
-    //         delete(children_head);
-
-    //         children_head = children_head->sibling_next;
-    //     }
-    // }
-
+    vnode *parent=nullptr;
+    vnode *children_head=nullptr;
+    vnode *sibling_next=nullptr; 
+    vnode *bfs_next = nullptr; // for deletion queue use only
     // remove the specific node in the tree
     static void remove_node(vnode * node)
     {
@@ -156,20 +148,21 @@ private:
     }
 
 public:
-    vnode *parent=nullptr;
-    vnode *children_head=nullptr;
-    vnode *sibling_next=nullptr; 
+
+    static std::stringstream ss;
     static MemoryPool pool;
     u_int64_t boardB;
     u_int64_t boardW;
     enum class OpType{
         TRAVERSE,
-        REMOVE,
+        PRUNE,
         UKNOWN
     };
     vnode (){
     }
 
+    virtual ~vnode (){
+    }
     void * operator new(size_t size)
     {
         return pool.allocate();
@@ -182,17 +175,16 @@ public:
     static std::string get_dot_formatted(){
         return ss.str();
     }
-            static std::stringstream ss;
     
     static void traverse(vnode * node){
         ss<<std::endl<<"a"<<node->parent->boardB<<"->"<<"a"<<node->boardB<<";";
 
     }
 
-    // breadth-first search of the tree
+    // breadth-first search for the tree
     static void BFS(vnode * node, vnode::OpType method = vnode::OpType::TRAVERSE, bool include_current_node = false)
     {
-        vnode * deletion_queue = nullptr;
+        vnode * queue_exit = nullptr;
         vnode * enqueue_ptr = nullptr;
         vnode * dequeue_ptr = nullptr;
         vnode * tmp_node = node;
@@ -205,7 +197,7 @@ public:
                 func = traverse;
                 break;
             
-            case vnode::OpType::REMOVE:
+            case vnode::OpType::PRUNE:
                 /* code */
                 func = remove_node;
                 break;
@@ -215,7 +207,7 @@ public:
                 break;
         }
 
-        // ok pruning section
+        // breadth-first-search section
         while(tmp_node != nullptr)
         {
             // enqueue the children
@@ -223,44 +215,43 @@ public:
             while(children != nullptr)
             {
                 // first element in queue
-                if(deletion_queue == nullptr)
+                if(queue_exit == nullptr)
                 {
-                    deletion_queue = children;
-                    deletion_queue->link_next = nullptr;
-                    enqueue_ptr = deletion_queue;
+                    queue_exit = children;
+                    queue_exit->bfs_next = nullptr;
+                    enqueue_ptr = queue_exit;
                 }
                 else
                 {
-                    enqueue_ptr->link_next = children;
+                    enqueue_ptr->bfs_next = children;
                     enqueue_ptr = children;
-                    enqueue_ptr->link_next = nullptr;
+                    enqueue_ptr->bfs_next = nullptr;
                 }
                 // std::cout<<"chd:"<<children->boardB<<"p,"<<children->parent->boardB<<",c_head:"<<children_head->boardB<<std::endl;
 
                 children = children->sibling_next;
             }
 
-            vnode * ptr = deletion_queue;
-        
-            //deque to start delete child
-            dequeue_ptr = deletion_queue;
+       
+            //deque stored node
+            dequeue_ptr = queue_exit;
 
             // move the pointer to the next
-            if(deletion_queue != nullptr)
+            if(queue_exit != nullptr)
             {
-                deletion_queue = deletion_queue->link_next;
-                // remove_node(dequeue_ptr); 
-                func(dequeue_ptr);  // Cast and call in one line
+                queue_exit = queue_exit->bfs_next;
+                func(dequeue_ptr);  // function pointer to run
        
             }
 
             tmp_node = dequeue_ptr;
         }
-        //done pruning section,
-        //now check whether need to do current node pruning
+        //done breadth-first-search
+
+        //now see whether need to do something for current node 
         if(include_current_node)
         {
-            func(node);  // Cast and call in one line
+            func(node);  // function pointer to run
         }
     }
     // append child to the children head, the link name is 'sibling_next', append both black and white bitboards
@@ -280,6 +271,26 @@ public:
     {
         return children_head;
     }
+
+    vnode * get_next_sibling()
+    {
+        return sibling_next;
+    }
+
+    vnode * get_parent()
+    {
+        return parent;
+    }
+};
+
+class nodeTools : vnode{
+protected:
+    nodeTools(){
+
+    }
+    virtual void test(){
+
+    }
 };
 
 
@@ -290,22 +301,7 @@ std::stringstream vnode::ss;
 void test()
 {
     vnode * list  = NULL;
-    
-    // for(int m = 0; m < 1000000; ++m)
-    // {
-    //     vnode *hello = new vnode();
-    //     hello->board = m;
-    //     hello->left = list;
-    //     list = hello;
-    // }
 
-    // vnode * tmplist = list;
-
-    // while(tmplist != NULL)
-    // {
-    //     std::cout<<tmplist->board<<std::endl;
-    //     tmplist = tmplist->left;
-    // }
 
     vnode * parent_node = new vnode();
     parent_node->boardB = 0;
@@ -323,7 +319,7 @@ void test()
     while(asd != nullptr)
     {
         std::cout<< asd->boardB<<std::endl;
-        asd = asd->sibling_next;
+        asd = asd->get_next_sibling();
     }
     
     // parent_node->BFS();
@@ -335,7 +331,7 @@ void test()
     while(asd2!= nullptr)
     {
         std::cout<< asd2->boardB<<std::endl;
-        asd2 = asd2->sibling_next;
+        asd2 = asd2->get_next_sibling();
 
         n++;
     }
@@ -362,14 +358,14 @@ vnode * record = nullptr;
             nextGen->append_child(10,0x93);
             
             nextnextGen = nextGen->get_children();
-                        record = nextnextGen->sibling_next;
-            nextnextGen->sibling_next->append_child(11,0x00);
+                        record = nextnextGen->get_next_sibling();
+            nextnextGen->get_next_sibling()->append_child(11,0x00);
             nextnextGen->append_child(12,0x00);
             nextnextGen->append_child(13,0x00);
 
         }
-        std::cout<< asd2->boardB<<",p:"<<asd2->parent->boardB<<std::endl;
-        asd2 = asd2->sibling_next;
+        std::cout<< asd2->boardB<<",p:"<<asd2->get_parent()->boardB<<std::endl;
+        asd2 = asd2->get_next_sibling();
        
         n++;
     }
@@ -389,15 +385,15 @@ vnode * record = nullptr;
 
        std::cout<<"\n\ndelete subtree simulation:selected node:"<<selected_node->boardB<<std::endl<<std::endl;
 
-    vnode::BFS(nextnextGen, vnode::OpType::REMOVE, false);
+    vnode::BFS(nextnextGen, vnode::OpType::PRUNE, true);
 
        asd2 = selected_node->get_children();
             //   asd2 = nextnextGen->get_children();
 
     while(asd2!= nullptr)
     {
-        std::cout<< asd2->boardB<<",parent2:"<<asd2->parent->boardB<<std::endl;
-        asd2 = asd2->sibling_next;
+        std::cout<< asd2->boardB<<",parent2:"<<asd2->get_parent()->boardB<<std::endl;
+        asd2 = asd2->get_next_sibling();
         n++;
     }
 
@@ -421,9 +417,9 @@ vnode * record = nullptr;
     
     while(asd2!= nullptr)
     {
-        std::cout<< asd2->boardB<<",parent3:"<<asd2->parent->boardB<<std::endl;
+        std::cout<< asd2->boardB<<",parent3:"<<asd2->get_parent()->boardB<<std::endl;
 
-        asd2 = asd2->sibling_next;
+        asd2 = asd2->get_next_sibling();
         n++;
     }
 
