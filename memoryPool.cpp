@@ -7,6 +7,7 @@
 #include <iostream>
 #include <thread>
 #include <cstring> // For memset and memcpy
+#include <sstream>
 
 class MemoryPool {
 private:
@@ -108,15 +109,15 @@ class vnode{
 private:
     vnode *link_next = nullptr; // for deletion queue use only
    // remove the last child in the children_head list, First-in-first-out style
-    void remove_node()
-    {
-        if(children_head != nullptr)
-        {
-            delete(children_head);
+    // void remove_node()
+    // {
+    //     if(children_head != nullptr)
+    //     {
+    //         delete(children_head);
 
-            children_head = children_head->sibling_next;
-        }
-    }
+    //         children_head = children_head->sibling_next;
+    //     }
+    // }
 
     // remove the specific node in the tree
     static void remove_node(vnode * node)
@@ -161,6 +162,11 @@ public:
     static MemoryPool pool;
     u_int64_t boardB;
     u_int64_t boardW;
+    enum class OpType{
+        TRAVERSE,
+        REMOVE,
+        UKNOWN
+    };
     vnode (){
     }
 
@@ -173,13 +179,42 @@ public:
     {
         return pool.deallocate(p);
     }
+    static std::string get_dot_formatted(){
+        return ss.str();
+    }
+            static std::stringstream ss;
+    
+    static void traverse(vnode * node){
+        ss<<std::endl<<"a"<<node->parent->boardB<<"->"<<"a"<<node->boardB<<";";
 
-    static void prune(vnode * node, bool include_current_node = false)
+    }
+
+    // breadth-first search of the tree
+    static void BFS(vnode * node, vnode::OpType method = vnode::OpType::TRAVERSE, bool include_current_node = false)
     {
         vnode * deletion_queue = nullptr;
         vnode * enqueue_ptr = nullptr;
         vnode * dequeue_ptr = nullptr;
         vnode * tmp_node = node;
+        void (*func)(vnode*) = nullptr;
+
+        switch (method)
+        {
+            case vnode::OpType::TRAVERSE:
+                /* code */
+                func = traverse;
+                break;
+            
+            case vnode::OpType::REMOVE:
+                /* code */
+                func = remove_node;
+                break;
+            
+            default:
+                func = traverse;
+                break;
+        }
+
         // ok pruning section
         while(tmp_node != nullptr)
         {
@@ -214,7 +249,9 @@ public:
             if(deletion_queue != nullptr)
             {
                 deletion_queue = deletion_queue->link_next;
-                remove_node(dequeue_ptr);        
+                // remove_node(dequeue_ptr); 
+                func(dequeue_ptr);  // Cast and call in one line
+       
             }
 
             tmp_node = dequeue_ptr;
@@ -223,7 +260,7 @@ public:
         //now check whether need to do current node pruning
         if(include_current_node)
         {
-            remove_node(node);
+            func(node);  // Cast and call in one line
         }
     }
     // append child to the children head, the link name is 'sibling_next', append both black and white bitboards
@@ -247,6 +284,9 @@ public:
 
 
 MemoryPool vnode::pool = MemoryPool(sizeof(vnode),100000);
+std::stringstream vnode::ss;
+
+
 void test()
 {
     vnode * list  = NULL;
@@ -268,10 +308,10 @@ void test()
     // }
 
     vnode * parent_node = new vnode();
-    parent_node->boardB = 0x1231;
+    parent_node->boardB = 0;
     std::cout<<"start:"<<std::endl;
     // this is a routine to simulate addition of sibling to the children head
-    for(int i =0; i <30; ++i)
+    for(int i =1; i <6; ++i)
     {
         parent_node->append_child(i, i);
 
@@ -286,8 +326,8 @@ void test()
         asd = asd->sibling_next;
     }
     
-    // parent_node->prune();
-    //     parent_node->prune();
+    // parent_node->BFS();
+    //     parent_node->BFS();
 
        vnode * asd2 = parent_node->get_children();
        std::cout<<"second:"<<std::endl;
@@ -299,7 +339,7 @@ void test()
 
         n++;
     }
-    // vnode::prune(parent_node);
+    // vnode::BFS(parent_node);
        std::cout<<"third:"<<std::endl;
 asd2 = parent_node->get_children();
     vnode * selected_node = nullptr;
@@ -309,34 +349,34 @@ vnode * record = nullptr;
     n = 0;
         while(asd2!= nullptr)
     {
-
-        std::cout<< asd2->boardB<<",p:"<<asd2->parent->boardB<<std::endl;
-        asd2 = asd2->sibling_next;
-        if(n == 3) 
+ if(n == 3) 
         {
             selected_node =asd2;
-            selected_node->append_child(0x88,0x76);
-                        selected_node->append_child(0x89,0x76);
+            selected_node->append_child(6,0x76);
+                        selected_node->append_child(7,0x76);
 
-            selected_node->append_child(0x8A,0x76);
+            selected_node->append_child(8,0x76);
             nextGen = selected_node->get_children();
 
-            nextGen->append_child(0x92,0x92);
-            nextGen->append_child(0x93,0x93);
+            nextGen->append_child(9,0x92);
+            nextGen->append_child(10,0x93);
             
             nextnextGen = nextGen->get_children();
                         record = nextnextGen->sibling_next;
-            nextnextGen->sibling_next->append_child(0x99,0x00);
-            nextnextGen->append_child(0x832,0x00);
-            nextnextGen->append_child(0x123,0x00);
+            nextnextGen->sibling_next->append_child(11,0x00);
+            nextnextGen->append_child(12,0x00);
+            nextnextGen->append_child(13,0x00);
 
         }
+        std::cout<< asd2->boardB<<",p:"<<asd2->parent->boardB<<std::endl;
+        asd2 = asd2->sibling_next;
+       
         n++;
     }
 
     //    std::cout<<"\n\ndelete subtree simulation:"<<"sel node:"<<nextGen->boardB<<std::endl<<std::endl;
 
-    // vnode::prune(nextGen);
+    // vnode::BFS(nextGen);
     // asd2 = record->get_children();
 
 
@@ -349,7 +389,7 @@ vnode * record = nullptr;
 
        std::cout<<"\n\ndelete subtree simulation:selected node:"<<selected_node->boardB<<std::endl<<std::endl;
 
-    vnode::prune(selected_node, true);
+    vnode::BFS(nextnextGen, vnode::OpType::REMOVE, false);
 
        asd2 = selected_node->get_children();
             //   asd2 = nextnextGen->get_children();
@@ -366,7 +406,7 @@ vnode * record = nullptr;
 
        std::cout<<"\n\ndelete subtree simulation:parent_node node:"<<parent_node->boardB<<std::endl<<std::endl;
 
-    vnode::prune(parent_node, true);
+    // vnode::BFS(parent_node, true);
 
     //simulate a binary tree creation
     const int max_child = 2;
@@ -378,18 +418,19 @@ vnode * record = nullptr;
 
            asd2 = parent_node->get_children();
             //   asd2 = nextnextGen->get_children();
-
+    
     while(asd2!= nullptr)
     {
-        std::cout<< asd2->boardB<<",parent3:"<<asd2->parent->boardB<<std::endl<<std::endl;
+        std::cout<< asd2->boardB<<",parent3:"<<asd2->parent->boardB<<std::endl;
+
         asd2 = asd2->sibling_next;
         n++;
     }
 
     //generate dot format
-
-
-
+    vnode::BFS(parent_node, vnode::OpType::TRAVERSE, false);
+    std::string x = vnode::get_dot_formatted();
+    std::cout << "\nsearch:"<<x;
     std::cout<<"size of vnode:"<< sizeof(vnode);
 
 }
