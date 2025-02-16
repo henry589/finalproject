@@ -25,7 +25,7 @@ public:
     uint64_t boardW;
     u_int64_t sim_visits = 0;
     double sim_reward = 0.0;
-    double explorationConstant = 0.0;
+    static constexpr double explorationConstant = 1.414;
 
     enum class OpType {
         TRAVERSE,

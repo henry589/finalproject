@@ -10,6 +10,7 @@
 #include <sstream>
 #include "../include/memoryPool.h"
 #include "../include/nodeManager.h"
+#include "../include/mcts.h"
 
 MemoryPool vnode::pool = MemoryPool(sizeof(vnode),100000);
 std::stringstream vnode::ss;
@@ -33,9 +34,15 @@ void test()
 
     // to simulate the rollout of the children
     vnode * asd = parent_node->get_children();
+    int dummycounter = 0;
     while(asd != nullptr)
     {
         std::cout<< asd->boardB<<std::endl;
+        asd->sim_visits = 2;
+        asd->sim_reward = 11;
+        // if(dummycounter == 3)
+        //     asd->sim_visits = 0;
+        dummycounter++;
         asd = asd->get_next_sibling();
     }
     
@@ -54,7 +61,8 @@ void test()
     }
     // vnode::BFS(parent_node);
        std::cout<<"third:"<<std::endl;
-asd2 = parent_node->get_children();
+    asd2 = parent_node->get_children();
+    parent_node->sim_visits = 2;
     vnode * selected_node = nullptr;
     vnode * nextGen = nullptr;
         vnode * nextnextGen = nullptr;
@@ -62,23 +70,35 @@ vnode * record = nullptr;
     n = 0;
         while(asd2!= nullptr)
     {
- if(n == 3) 
+        if(n == 3) 
         {
             selected_node =asd2;
             selected_node->append_child(6,0x76);
-                        selected_node->append_child(7,0x76);
-
+            selected_node->append_child(7,0x76);
             selected_node->append_child(8,0x76);
-            nextGen = selected_node->get_children();
+            selected_node->sim_visits = 1;
+            selected_node->sim_reward = 18;
 
+
+
+            nextGen = selected_node->get_children();
+            nextGen->sim_visits = 5;
+            nextGen->sim_reward = 20;
+            nextGen->get_next_sibling()->sim_visits = 3;
+            nextGen->get_next_sibling()->sim_reward = 3;
+            nextGen->get_next_sibling()->get_next_sibling()->sim_visits = 4;
+            nextGen->get_next_sibling()->get_next_sibling()->sim_reward = 6;
             nextGen->append_child(9,0x92);
             nextGen->append_child(10,0x93);
+
             
             nextnextGen = nextGen->get_children();
-                        record = nextnextGen->get_next_sibling();
+            // record = nextnextGen->get_next_sibling();
             nextnextGen->get_next_sibling()->append_child(11,0x00);
             nextnextGen->append_child(12,0x00);
             nextnextGen->append_child(13,0x00);
+            nextnextGen->sim_visits = 2;
+            nextnextGen->sim_reward = 20;
 
         }
         std::cout<< asd2->boardB<<",p:"<<asd2->get_parent()->boardB<<std::endl;
@@ -102,7 +122,7 @@ vnode * record = nullptr;
 
        std::cout<<"\n\ndelete subtree simulation:selected node:"<<selected_node->boardB<<std::endl<<std::endl;
 
-    vnode::BFS(nextnextGen, vnode::OpType::PRUNE, true);
+    // vnode::BFS(nextnextGen, vnode::OpType::PRUNE, true);
 
        asd2 = selected_node->get_children();
             //   asd2 = nextnextGen->get_children();
@@ -145,6 +165,9 @@ vnode * record = nullptr;
     std::string x = vnode::get_dot_formatted();
     std::cout << "\nsearch:"<<x;
     std::cout<<"size of vnode:"<< sizeof(vnode);
+
+    mcts * mc = new mcts();
+    mc->selection(parent_node);
 
 }
 
@@ -277,7 +300,7 @@ void test_uct_formula()
     vnode * testnode = parent_node->get_children();
     testnode->sim_visits = 100;
     testnode->sim_reward = 3;
-    testnode->explorationConstant = 1.414;
+    // testnode->explorationConstant = 1.414;
     std::cout<<"\nuct calculated:"<<testnode->calc_uct()<<std::endl;
 
 }
