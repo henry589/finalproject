@@ -147,33 +147,6 @@ vnode * record = nullptr;
     std::cout<<"size of vnode:"<< sizeof(vnode);
 
 }
-//node selection
-void selection()
-{
-    // node = choose_child(current node);
-    //parent to child node selection the selection method is defined later
-    
-
-}
-
-//expansion
-void expansion()
-{
-    // if node not termination node, expand the node
-
-}
-
-//simulation
-void simulation()
-{
-    //simulation starting from this node
-}
-
-//backup
-void backup()
-{
-    //simulation starting from this node
-}
 
 
 void singleThreadTest() {
@@ -296,6 +269,20 @@ void valueVerificationTest() {
     std::cout << "Value verification test passed.\n";
 }
 
+void test_uct_formula()
+{
+    vnode * parent_node = new vnode();
+    parent_node->sim_visits = 5;
+    parent_node->append_child(13,14);
+    vnode * testnode = parent_node->get_children();
+    testnode->sim_visits = 100;
+    testnode->sim_reward = 3;
+    testnode->explorationConstant = 1.414;
+    std::cout<<"\nuct calculated:"<<testnode->calc_uct()<<std::endl;
+
+}
+
+
 int main() {
     // try {
     //     valueVerificationTest();
@@ -306,5 +293,6 @@ int main() {
     //     return 1;
     // }
     test();
+    test_uct_formula();
     return 0;
 }

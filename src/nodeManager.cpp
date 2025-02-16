@@ -37,8 +37,6 @@
         }
     }
 
-
-
     void * vnode::operator new(size_t size)
     {
         return pool.allocate();
@@ -84,11 +82,23 @@
                 break;
         }
 
+        // see whether need to do something for current node 
+        if(include_current_node)
+        {
+            func(node);  // function pointer to run
+        }
+
+        // int countDepth = 0;
         // breadth-first-search section
         while(tmp_node != nullptr)
         {
             // enqueue the children
             vnode * children = tmp_node->get_children();
+            // if(children != nullptr) 
+            // {
+            //     countDepth++;
+            //     std::cout<<"\ndepth:"<<countDepth<<"\n";
+            // }
             while(children != nullptr)
             {
                 // first element in queue
@@ -104,7 +114,7 @@
                     enqueue_ptr = children;
                     enqueue_ptr->bfs_next = nullptr;
                 }
-                // std::cout<<"chd:"<<children->boardB<<"p,"<<children->parent->boardB<<",c_head:"<<children_head->boardB<<std::endl;
+                // std::cout<<"chd:"<<children->boardB<<",p,"<<children->parent->boardB<<std::endl;
 
                 children = children->sibling_next;
             }
@@ -120,17 +130,13 @@
                 func(dequeue_ptr);  // function pointer to run
        
             }
-
             tmp_node = dequeue_ptr;
         }
         //done breadth-first-search
 
-        //now see whether need to do something for current node 
-        if(include_current_node)
-        {
-            func(node);  // function pointer to run
-        }
+       
     }
+    
     // append child to the children head, the link name is 'sibling_next', append both black and white bitboards
     void vnode::append_child(u_int64_t boardB, u_int64_t boardW )
     {
@@ -142,6 +148,14 @@
         children_head = child_node; 
     }
 
+    // get the current node uct value;
+    double vnode::calc_uct()
+    {
+        if (sim_visits == 0) {
+            return std::numeric_limits<double>::infinity(); // Encourage exploration
+        }
+        return (sim_reward / sim_visits) + explorationConstant * std::sqrt(std::log(parent->sim_visits) / sim_visits);   
+    }
  
     // always point to the head of the children list
     vnode * vnode::get_children()
