@@ -99,7 +99,13 @@ vnode * record = nullptr;
             nextnextGen->append_child(13,0x00);
             nextnextGen->sim_visits = 2;
             nextnextGen->sim_reward = 20;
+            nextnextGen->get_next_sibling()->sim_visits=1;
+            nextnextGen->get_next_sibling()->sim_reward=3;
 
+        }
+        if(n==1)
+        {
+            record = asd2;
         }
         std::cout<< asd2->boardB<<",p:"<<asd2->get_parent()->boardB<<std::endl;
         asd2 = asd2->get_next_sibling();
@@ -167,7 +173,7 @@ vnode * record = nullptr;
     std::cout<<"size of vnode:"<< sizeof(vnode);
 
     mcts * mc = new mcts();
-    mc->selection(parent_node);
+    mc->selection(record);
 
 }
 

@@ -5,10 +5,12 @@
 class mcts{
     public:
     vnode * currentTree;
-    void selection(vnode * root);
-    void expansion();
+    vnode * selection(vnode * root);
+    vnode * expansion(vnode * lfnode);
     void simulation();
     void backup();
+    bool isTerminal(vnode * node);
+    vnode * createValidChildren(vnode * node,  int &child_count);
 };
 
 #endif
