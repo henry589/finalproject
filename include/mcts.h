@@ -11,6 +11,8 @@ class mcts{
     void backup();
     bool isTerminal(vnode * node);
     vnode * createValidChildren(vnode * node,  int &child_count);
+    void boardViewer(uint64_t & boardB, uint64_t & boardW);
+    uint64_t placeMove(u_int64_t & board, int  bit_pos);
 };
 
 #endif

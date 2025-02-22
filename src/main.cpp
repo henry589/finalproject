@@ -11,6 +11,9 @@
 #include "../include/memoryPool.h"
 #include "../include/nodeManager.h"
 #include "../include/mcts.h"
+#include "../include/bitBoard.h"
+
+using namespace bitboard;
 
 MemoryPool vnode::pool = MemoryPool(sizeof(vnode),100000);
 std::stringstream vnode::ss;
@@ -175,6 +178,16 @@ vnode * record = nullptr;
     mcts * mc = new mcts();
     mc->selection(record);
 
+
+    uint64_t boardB = 0x89240a904394248a;
+    uint64_t boardW = 0x2218012d20008014;
+    mc->boardViewer(boardB, boardW);
+    std::cout << "\n\nplaced board:\n";
+
+    uint64_t movePlaced = mc->placeMove(boardB, 5);
+    mc->boardViewer(movePlaced, boardW);
+   
+
 }
 
 
@@ -311,7 +324,6 @@ void test_uct_formula()
 
 }
 
-
 int main() {
     // try {
     //     valueVerificationTest();
@@ -323,5 +335,31 @@ int main() {
     // }
     test();
     test_uct_formula();
+    magicBitboard();
+    
+    std::cout<<"\nindexed:"<<magics[SQ_F5][ROOK - BISHOP].attacks_bb(0x2000008400000020);
+    
+    bitboard::buildConnectivityMask();
+    
+    
+    uint64_t boardx = 0;
+    mcts *dummy = new mcts();
+    std::cout << "\n\nconnectivity mask 0:\n";
+    dummy->boardViewer(connectivityMask[SQ_F5][0], boardx);
+    std::cout << "\n\nconnectivity mask 1:\n";
+    dummy->boardViewer(connectivityMask[SQ_F5][1], boardx);
+    std::cout << "\n\nconnectivity mask 2:\n";
+    dummy->boardViewer(connectivityMask[SQ_F5][2], boardx);
+    std::cout << "\n\nconnectivity mask 3:\n";
+    dummy->boardViewer(connectivityMask[SQ_F5][3], boardx);
+
+    Bitboard playerBoard = 0x20008200000020;
+    Bitboard oppBoard = 0x5C20002000;
+        std::cout<<"\nstart 2333333333333333\n";
+
+    actual_flips(ROOK, SQ_F5, playerBoard, oppBoard);
+    // std::cout<<":"<<nb<<"\n";
+    // dummy->boardViewer(nb, boardx);
     return 0;
+    
 }

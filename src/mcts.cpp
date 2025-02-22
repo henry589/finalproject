@@ -96,6 +96,48 @@ bool mcts::isTerminal(vnode *node)
     return false;
 }
 
+uint64_t mcts::placeMove(u_int64_t &board, int bit_pos)
+{
+    return board | (1 << bit_pos);
+}
+
+void mcts::boardViewer(uint64_t &boardB, uint64_t &boardW)
+{
+    //decode the bitboard
+    uint64_t boardBtmp = boardB;
+    uint64_t boardWtmp = boardW;
+    int n = 0;
+    char board_char_arr[64] = {};
+    for(int m =0; m < 64; ++m)
+    {
+        board_char_arr[n++] = boardBtmp & 1 ? 'x' : boardWtmp & 1 ? 'o' : '-';
+        boardBtmp >>= 1;
+        boardWtmp >>= 1;
+    }
+    
+    for (int m = 7; m >= 0; --m)
+    {
+        for(int i = (8 * m) + 7; i >= 8 * m; --i)
+        {
+
+            std::cout<<board_char_arr[i];
+            if(i % 8 == 0)
+            std::cout<<std::endl;
+        }
+    }
+
+}
+
 vnode * mcts::createValidChildren(vnode *node, int &child_count)
 {
+    // take current node and then check for all possible nodes
+    // this will follow the othello rule
+    //
+    u_int64_t cur_boardB = node->boardB;
+    u_int64_t cur_boardW = node->boardW;
+
+    
+
+
+    return nullptr;
 }
