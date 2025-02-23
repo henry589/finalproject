@@ -1,6 +1,9 @@
 #include "../include/mcts.h"
 #include "../include/misc.h"
 #include <iostream>
+#include "../include/bitBoard.h"
+
+using namespace bitboard;
 //select the nodes to form a path down the tree
 vnode * mcts::selection(vnode * root)
 {
@@ -30,14 +33,15 @@ vnode * mcts::selection(vnode * root)
                 // set the desired node each time uct updated
                 best_child = children;
             }
-                        // means this unexplored child
+            
+            // means this an unexplored child
             if(children->sim_visits == 0)
             {
                 // perform random choice whether to take this children or not
                 if(random_bool(0.5))
-                 {
-                     best_child = children;
-                 }  
+                {
+                    best_child = children;
+                }  
 
             }
             
@@ -96,7 +100,7 @@ bool mcts::isTerminal(vnode *node)
     return false;
 }
 
-uint64_t mcts::placeMove(u_int64_t &board, int bit_pos)
+uint64_t mcts::placeMove(Bitboard &board, int bit_pos)
 {
     return board | (1 << bit_pos);
 }
@@ -134,12 +138,36 @@ vnode * mcts::createValidChildren(vnode *node, int &child_count)
 {
     // take current node and then check for all possible nodes
     // this will follow the othello rule
-    //
-    u_int64_t cur_boardB = node->boardB;
-    u_int64_t cur_boardW = node->boardW;
+    const Bitboard & cur_boardB = node->boardB;
+    const Bitboard & cur_boardW = node->boardW;
+    const Bitboard & cur_side = node->turn == BLACK? cur_boardB : cur_boardW;
+    const Bitboard & alt_side = node->turn == WHITE? cur_boardB : cur_boardW;
+    const Bitboard & overlapped_board = cur_boardB | cur_boardW; 
+    // assume the square sq is empty
+    // we have to know whether it is empty square first
+    for(Square sq = SQ_A1; sq <= SQ_H8; ++sq)
+    {
+        // check if not empty empty
+        if( overlapped_board & (1ULL << sq))
+        {
+            continue;
+        }
+        else{ // empty
+            // actual flips are the flips that would be done by the cur_boardB only
+            const Bitboard & future_flips = actual_flips(sq, cur_side, alt_side);
+       
+            if(future_flips ^ 0) // future_flips contain something also means not equal to zero
+            {
+                const Bitboard & mod_cur_boardB = node->turn == BLACK? future_flips | cur_boardB | (1ULL<<sq) : ~future_flips & cur_boardB;
+                const Bitboard & mod_cur_boardW = node->turn == WHITE? future_flips | cur_boardW | (1ULL<<sq) : ~future_flips & cur_boardW;
+                node->append_child(mod_cur_boardB, mod_cur_boardW, !node->turn);
+                ++child_count;
+            }
+            
+        }
+    }
+   
 
-    
-
-
-    return nullptr;
+    // Bitboard 
+    return node->get_children();
 }

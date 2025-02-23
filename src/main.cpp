@@ -23,14 +23,14 @@ void test()
 {
     vnode * list  = NULL;
 
-
+    Side s = BLACK;
     vnode * parent_node = new vnode();
     parent_node->boardB = 0;
     std::cout<<"start:"<<std::endl;
     // this is a routine to simulate addition of sibling to the children head
     for(int i =1; i <6; ++i)
     {
-        parent_node->append_child(i, i);
+        parent_node->append_child(i, i, s);
 
     }
     std::cout<<"done:"<<std::endl;
@@ -43,14 +43,11 @@ void test()
         std::cout<< asd->boardB<<std::endl;
         asd->sim_visits = 2;
         asd->sim_reward = 11;
-        // if(dummycounter == 3)
-        //     asd->sim_visits = 0;
+
         dummycounter++;
         asd = asd->get_next_sibling();
     }
     
-    // parent_node->BFS();
-    //     parent_node->BFS();
 
        vnode * asd2 = parent_node->get_children();
        std::cout<<"second:"<<std::endl;
@@ -68,17 +65,17 @@ void test()
     parent_node->sim_visits = 2;
     vnode * selected_node = nullptr;
     vnode * nextGen = nullptr;
-        vnode * nextnextGen = nullptr;
-vnode * record = nullptr;
+    vnode * nextnextGen = nullptr;
+    vnode * record = nullptr;
     n = 0;
         while(asd2!= nullptr)
     {
         if(n == 3) 
         {
             selected_node =asd2;
-            selected_node->append_child(6,0x76);
-            selected_node->append_child(7,0x76);
-            selected_node->append_child(8,0x76);
+            selected_node->append_child(6,0x76,s);
+            selected_node->append_child(7,0x76,s);
+            selected_node->append_child(8,0x76,s);
             selected_node->sim_visits = 1;
             selected_node->sim_reward = 18;
 
@@ -91,15 +88,15 @@ vnode * record = nullptr;
             nextGen->get_next_sibling()->sim_reward = 3;
             nextGen->get_next_sibling()->get_next_sibling()->sim_visits = 4;
             nextGen->get_next_sibling()->get_next_sibling()->sim_reward = 6;
-            nextGen->append_child(9,0x92);
-            nextGen->append_child(10,0x93);
+            nextGen->append_child(9,0x92,s);
+            nextGen->append_child(10,0x93,s);
 
             
             nextnextGen = nextGen->get_children();
             // record = nextnextGen->get_next_sibling();
-            nextnextGen->get_next_sibling()->append_child(11,0x00);
-            nextnextGen->append_child(12,0x00);
-            nextnextGen->append_child(13,0x00);
+            nextnextGen->get_next_sibling()->append_child(11,0x00,s);
+            nextnextGen->append_child(12,0x00,s);
+            nextnextGen->append_child(13,0x00,s);
             nextnextGen->sim_visits = 2;
             nextnextGen->sim_reward = 20;
             nextnextGen->get_next_sibling()->sim_visits=1;
@@ -116,58 +113,6 @@ vnode * record = nullptr;
         n++;
     }
 
-    //    std::cout<<"\n\ndelete subtree simulation:"<<"sel node:"<<nextGen->boardB<<std::endl<<std::endl;
-
-    // vnode::BFS(nextGen);
-    // asd2 = record->get_children();
-
-
-    // while(asd2!= nullptr)
-    // {
-    //     std::cout<< asd2->boardB<<",parent1:"<<asd2->parent->boardB<<std::endl;
-    //     asd2 = asd2->sibling_next;
-    //     n++;
-    // }
-
-       std::cout<<"\n\ndelete subtree simulation:selected node:"<<selected_node->boardB<<std::endl<<std::endl;
-
-    // vnode::BFS(nextnextGen, vnode::OpType::PRUNE, true);
-
-       asd2 = selected_node->get_children();
-            //   asd2 = nextnextGen->get_children();
-
-    while(asd2!= nullptr)
-    {
-        std::cout<< asd2->boardB<<",parent2:"<<asd2->get_parent()->boardB<<std::endl;
-        asd2 = asd2->get_next_sibling();
-        n++;
-    }
-
-    // if(selected_node != nullptr)
-    //         std::cout<< selected_node->boardB<<",parent_sel:"<<selected_node->parent->boardB<<std::endl;
-
-       std::cout<<"\n\ndelete subtree simulation:parent_node node:"<<parent_node->boardB<<std::endl<<std::endl;
-
-    // vnode::BFS(parent_node, true);
-
-    //simulate a binary tree creation
-    const int max_child = 2;
-    for(int depth = 0; depth<4; ++depth)
-    {
-        // parent_node = new vnode();
-    }
-
-
-           asd2 = parent_node->get_children();
-            //   asd2 = nextnextGen->get_children();
-    
-    while(asd2!= nullptr)
-    {
-        std::cout<< asd2->boardB<<",parent3:"<<asd2->get_parent()->boardB<<std::endl;
-
-        asd2 = asd2->get_next_sibling();
-        n++;
-    }
 
     //generate dot format
     vnode::BFS(parent_node, vnode::OpType::TRAVERSE, false);
@@ -177,15 +122,27 @@ vnode * record = nullptr;
 
     mcts * mc = new mcts();
     mc->selection(record);
+    int childCount = 0;
+    vnode * test_node = new vnode();
+    test_node->boardB = 0x4a000a200080060;
+    test_node->boardW = 0x8101c30002000;
+    
+    test_node->turn = BLACK;
+    vnode * children = mc->createValidChildren(test_node, childCount);
+    std::cout<<"\nchild count:"<<childCount;
+    vnode * tmpChildren = children;
+    while(tmpChildren != nullptr)
+    {
+        mc->boardViewer(tmpChildren->boardB, tmpChildren->boardW);
+        tmpChildren = tmpChildren->get_next_sibling();
+    }
+    // uint64_t boardB = 0x89240a904394248a;
+    // uint64_t boardW = 0x2218012d20008014;
+    // mc->boardViewer(boardB, boardW);
+    // std::cout << "\n\nplaced board:\n";
 
-
-    uint64_t boardB = 0x89240a904394248a;
-    uint64_t boardW = 0x2218012d20008014;
-    mc->boardViewer(boardB, boardW);
-    std::cout << "\n\nplaced board:\n";
-
-    uint64_t movePlaced = mc->placeMove(boardB, 5);
-    mc->boardViewer(movePlaced, boardW);
+    // uint64_t movePlaced = mc->placeMove(boardB, 5);
+    // mc->boardViewer(movePlaced, boardW);
    
 
 }
@@ -313,9 +270,10 @@ void valueVerificationTest() {
 
 void test_uct_formula()
 {
+    Side s = BLACK;
     vnode * parent_node = new vnode();
     parent_node->sim_visits = 5;
-    parent_node->append_child(13,14);
+    parent_node->append_child(13,14,s);
     vnode * testnode = parent_node->get_children();
     testnode->sim_visits = 100;
     testnode->sim_reward = 3;
@@ -333,14 +291,13 @@ int main() {
     //     std::cerr << "Test failed: " << e.what() << '\n';
     //     return 1;
     // }
+    init_Bitboards();
+
     test();
     test_uct_formula();
-    magicBitboard(ORTHO, OrthoTable);
-    magicBitboard(DIAGO, DiagoTable);
-    std::cout<<"\nindexed:"<<magics[SQ_F5][ORTHO - DIAGO].attacks_bb(0x2000008400000020);
-    
-    bitboard::buildConnectivityMask();
-    
+
+    std::cout<<"\nindexed:"<<magics[SQ_F5][ORTHO - DIAGO].rays_bb(0x2000008400000020);
+        
     
     uint64_t boardx = 0;
     mcts *dummy = new mcts();
@@ -352,19 +309,28 @@ int main() {
     dummy->boardViewer(connectivityMaskOrtho[SQ_F5][2], boardx);
     std::cout << "\n\nconnectivity mask 3:\n";
     dummy->boardViewer(connectivityMaskOrtho[SQ_F5][3], boardx);
-
-    Bitboard playerBoard = 0x4a0008200080020;
+    // 0x101430002000
+    // 0x8505c30002000
+    
+    // 0x4a0008200080020
+    Bitboard playerBoard = 0x45a0008200080061;
     Bitboard oppBoard = 0x8505c30002000;
         std::cout<<"\nstart 2333333333333333\n";
 
     Square testSquare = SQ_F5;
-    actual_flips(testSquare, playerBoard, oppBoard);
+    const Bitboard & future_flips = actual_flips(testSquare, playerBoard, oppBoard);
+    bool validFlip = future_flips ^ 0 ? true : false;
+    std::cout<<"\nvalid move:\n";
+    std::cout<<validFlip;
 
-    // Bitboard diagoray = magics[SQ_D4][DIAGO - DIAGO].attacks_bb(0x220000100001);
-    // dummy->boardViewer(diagoray, boardx);
+//   const Bitboard & future_flips = actual_flips(sq, Black_occupied, White_occupied);
+//     bool validFlip = future_flips ^ 0 ? true : false; // means got possible flips
 
-    // std::cout<<":"<<nb<<"\n";
-    // dummy->boardViewer(nb, boardx);
+//     Bitboard diagoray = magics[SQ_D4][DIAGO - DIAGO].rays_bb(0x220000100001);
+//     dummy->boardViewer(diagoray, boardx);
+
+//     std::cout<<":"<<nb<<"\n";
+//     dummy->boardViewer(nb, boardx);
     return 0;
     
 }

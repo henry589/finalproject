@@ -138,11 +138,12 @@
     }
     
     // append child to the children head, the link name is 'sibling_next', append both black and white bitboards
-    void vnode::append_child(u_int64_t boardB, u_int64_t boardW )
+    void vnode::append_child(u_int64_t boardB, u_int64_t boardW, const bool & turn)
     {
         vnode *child_node = new vnode();
         child_node->boardB = boardB;
         child_node->boardW = boardW;
+        child_node->turn = turn;
         child_node->sibling_next = children_head;
         child_node->parent = this;
         children_head = child_node; 

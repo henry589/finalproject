@@ -2,6 +2,8 @@
 #ifndef MCTS_H
 #define MCTS_H
 #include "nodeManager.h"
+#include "bitBoard.h"
+
 class mcts{
     public:
     vnode * currentTree;

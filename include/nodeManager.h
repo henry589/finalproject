@@ -7,6 +7,8 @@
 #include <cmath>
 #include "memoryPool.h"
 
+using side = bool;
+
 // Forward declaration of MemoryPool (assuming its implementation is elsewhere)
 class vnode {
 private:
@@ -24,6 +26,7 @@ public:
     uint64_t boardB;
     uint64_t boardW;
     u_int64_t sim_visits = 0;
+    side turn;
     double sim_reward = 0.0;
     static constexpr double explorationConstant = 1.414;
 
@@ -46,7 +49,7 @@ public:
     static void BFS(vnode* node, OpType method = OpType::TRAVERSE, bool include_current_node = false);
     double calc_uct();
     // Tree manipulation functions
-    void append_child(uint64_t boardB, uint64_t boardW);
+    void append_child(uint64_t boardB, uint64_t boardW, const bool & turn);
     vnode* get_children();
     vnode* get_next_sibling();
     vnode* get_parent();
