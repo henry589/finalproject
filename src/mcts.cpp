@@ -114,7 +114,8 @@ void mcts::boardViewer(uint64_t &boardB, uint64_t &boardW)
         boardBtmp >>= 1;
         boardWtmp >>= 1;
     }
-    
+    std::cout<<"\npretty board:\n";
+
     for (int m = 7; m >= 0; --m)
     {
         for(int i = (8 * m) + 7; i >= 8 * m; --i)
@@ -125,6 +126,7 @@ void mcts::boardViewer(uint64_t &boardB, uint64_t &boardW)
             std::cout<<std::endl;
         }
     }
+    std::cout<<"\nend board\n";
 
 }
 

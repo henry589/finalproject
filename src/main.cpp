@@ -335,9 +335,9 @@ int main() {
     // }
     test();
     test_uct_formula();
-    magicBitboard();
-    
-    std::cout<<"\nindexed:"<<magics[SQ_F5][ROOK - BISHOP].attacks_bb(0x2000008400000020);
+    magicBitboard(ORTHO, OrthoTable);
+    magicBitboard(DIAGO, DiagoTable);
+    std::cout<<"\nindexed:"<<magics[SQ_F5][ORTHO - DIAGO].attacks_bb(0x2000008400000020);
     
     bitboard::buildConnectivityMask();
     
@@ -345,19 +345,24 @@ int main() {
     uint64_t boardx = 0;
     mcts *dummy = new mcts();
     std::cout << "\n\nconnectivity mask 0:\n";
-    dummy->boardViewer(connectivityMask[SQ_F5][0], boardx);
+    dummy->boardViewer(connectivityMaskOrtho[SQ_F5][0], boardx);
     std::cout << "\n\nconnectivity mask 1:\n";
-    dummy->boardViewer(connectivityMask[SQ_F5][1], boardx);
+    dummy->boardViewer(connectivityMaskOrtho[SQ_F5][1], boardx);
     std::cout << "\n\nconnectivity mask 2:\n";
-    dummy->boardViewer(connectivityMask[SQ_F5][2], boardx);
+    dummy->boardViewer(connectivityMaskOrtho[SQ_F5][2], boardx);
     std::cout << "\n\nconnectivity mask 3:\n";
-    dummy->boardViewer(connectivityMask[SQ_F5][3], boardx);
+    dummy->boardViewer(connectivityMaskOrtho[SQ_F5][3], boardx);
 
-    Bitboard playerBoard = 0x20008200000020;
-    Bitboard oppBoard = 0x5C20002000;
+    Bitboard playerBoard = 0x4a0008200080020;
+    Bitboard oppBoard = 0x8505c30002000;
         std::cout<<"\nstart 2333333333333333\n";
 
-    actual_flips(ROOK, SQ_F5, playerBoard, oppBoard);
+    Square testSquare = SQ_F5;
+    actual_flips(testSquare, playerBoard, oppBoard);
+
+    // Bitboard diagoray = magics[SQ_D4][DIAGO - DIAGO].attacks_bb(0x220000100001);
+    // dummy->boardViewer(diagoray, boardx);
+
     // std::cout<<":"<<nb<<"\n";
     // dummy->boardViewer(nb, boardx);
     return 0;

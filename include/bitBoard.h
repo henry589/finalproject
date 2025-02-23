@@ -94,10 +94,9 @@ enum Direction : int {
     SOUTH_WEST = SOUTH + WEST,
     NORTH_WEST = NORTH + WEST
 };
-enum PieceType {
-    NO_PIECE_TYPE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
-    ALL_PIECES = 0,
-    PIECE_TYPE_NB = 8
+enum DirectionType {
+    DIAGO, 
+    ORTHO
 };
 constexpr bool is_ok(Square s) { return s >= SQ_A1 && s <= SQ_H8; }
 
@@ -121,7 +120,8 @@ constexpr Square operator+(Square s, Direction d) { return Square(int(s) + int(d
 constexpr Square operator-(Square s, Direction d) { return Square(int(s) - int(d)); }
 inline Square&   operator+=(Square& s, Direction d) { return s = s + d; }
 uint8_t SquareDistance[SQUARE_NB][SQUARE_NB];
-Bitboard LCoinTable[0x19000]; 
+Bitboard OrthoTable[0x19000];  // to store orthogonal attacks
+Bitboard DiagoTable[0x1480];  // To store diagonal attacks
 
 
 template<typename T1 = Square>
@@ -177,15 +177,15 @@ void boardViewer(uint64_t &boardB, uint64_t &boardW)
 
 }
 // potential flipping, checking the first end of the same piece, edges are also considered, edges only not considered for occupancies
-Bitboard expected_flips(PieceType pt, Square sq, Bitboard occupied, bool singleDirection=false, int direction_selected=0) {
+Bitboard expected_flips(DirectionType dr, Square sq, Bitboard occupied, bool singleDirection=false, int direction_selected=0) {
 
     Bitboard  attacks             = 0;
-    Direction RookDirections[4]   = {NORTH, SOUTH, EAST, WEST};
-    Direction BishopDirections[4] = {NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST};
+    Direction OrthoDirections[4]   = {NORTH, SOUTH, EAST, WEST};
+    Direction DiagoDirections[4] = {NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST};
 
     if(singleDirection == false)
     {
-        for (Direction d : (pt == ROOK ? RookDirections : BishopDirections))
+        for (Direction d : (dr == ORTHO ? OrthoDirections : DiagoDirections))
         {
             Square s = sq;
             while (safe_destination(s, d))
@@ -200,7 +200,12 @@ Bitboard expected_flips(PieceType pt, Square sq, Bitboard occupied, bool singleD
     }else
     {
         Square s = sq;
-        Direction d = RookDirections[direction_selected];
+        Direction d;
+        if(dr == ORTHO)
+            d = OrthoDirections[direction_selected];
+        else if(dr == DIAGO)
+            d = DiagoDirections[direction_selected];
+
         while (safe_destination(s, d))
         {
             attacks |= (s += d);
@@ -209,38 +214,55 @@ Bitboard expected_flips(PieceType pt, Square sq, Bitboard occupied, bool singleD
 
     return attacks;
 }
-Bitboard connectivityMask[SQUARE_NB][4];
+Bitboard connectivityMaskOrtho[SQUARE_NB][4];
+Bitboard connectivityMaskDiago[SQUARE_NB][4];
+
 void buildConnectivityMask(){
     for(Square sq = SQ_A1; sq <= SQ_H8; ++sq)
     {
         for(int n=0; n < 4; ++n)
         {
-            connectivityMask[sq][n] = expected_flips(ROOK, sq, 0, true, n);
+            connectivityMaskOrtho[sq][n] = expected_flips(ORTHO, sq, 0, true, n);
+        }
+        for(int n=0; n < 4; ++n)
+        {
+            connectivityMaskDiago[sq][n] = expected_flips(DIAGO, sq, 0, true, n);
         }
     }
 }
 
-Bitboard actual_flips(PieceType pt, Square sq, Bitboard Player_occupied, Bitboard Opponent_occupied) {
+// this is the actual flips
+inline Bitboard actual_flips(Square & sq, const Bitboard & Player_occupied, const Bitboard & Opponent_occupied) {
 
     Bitboard  board             = 0;
 
-    const Magic m = magics[sq][ROOK - BISHOP];
-    Bitboard expected_flips = magics[sq][ROOK - BISHOP].attacks_bb(Player_occupied);
-    Bitboard dummy = 0;
-    Bitboard outmost = Player_occupied & expected_flips;
+    Bitboard ortho_expected_flips = magics[sq][ORTHO - DIAGO].attacks_bb(Player_occupied);
+    Bitboard ortho_outmost_coin = Player_occupied & ortho_expected_flips;
 
-    boardViewer(expected_flips, dummy);
+    Bitboard diago_expected_flips = magics[sq][DIAGO - DIAGO].attacks_bb(Player_occupied);
+    Bitboard diago_outmost_coin = Player_occupied & diago_expected_flips;
+    Bitboard dummy = 0;
+
+    boardViewer(ortho_expected_flips, dummy);
     for (int d = 0; d < 4; ++d)
     {
-        Square s = sq;
-        
-
-        Bitboard x = Opponent_occupied & connectivityMask[s][d];
-        Bitboard outmost_tmp = outmost & connectivityMask[s][d];
-        Bitboard exp_tmp = expected_flips & connectivityMask[s][d];
-        Bitboard x_or_outmost_tmp = x | outmost_tmp;
-        Bitboard flip = exp_tmp != x_or_outmost_tmp ? 0 : x_or_outmost_tmp;
-        board |= (flip | outmost_tmp);
+        const Bitboard & cMask = connectivityMaskOrtho[sq][d];
+        const Bitboard & x = Opponent_occupied & cMask;
+        const Bitboard & outmost_tmp = ortho_outmost_coin & cMask;
+        const Bitboard & exp_tmp = ortho_expected_flips & cMask;
+        const Bitboard & x_or_outmost_tmp = x | outmost_tmp;
+        const Bitboard & flip = exp_tmp ^ x_or_outmost_tmp ? 0 : x;
+        board |= flip;
+    }
+    for (int d = 0; d < 4; ++d)
+    {
+        const Bitboard & cMask = connectivityMaskDiago[sq][d];
+        const Bitboard & x = Opponent_occupied & cMask;
+        const Bitboard & outmost_tmp = diago_outmost_coin & cMask;
+        const Bitboard & exp_tmp = diago_expected_flips & cMask;
+        const Bitboard & x_or_outmost_tmp = x | outmost_tmp;
+        const Bitboard & flip = exp_tmp ^ x_or_outmost_tmp ? 0 : x;
+        board |= flip;
     }
     boardViewer(board, dummy);
 
@@ -280,7 +302,7 @@ inline int popcount(Bitboard b) {
     return __builtin_popcountll(b);
     
 }
-void magicBitboard()
+void magicBitboard(DirectionType dr, Bitboard table[])
 {
     // std::random_device rd;
     // std::mt19937_64 generator(rd()); // Randomly seeded 64-bit Mersenne Twister
@@ -307,19 +329,12 @@ void magicBitboard()
         // all the attacks for each possible subset of the mask and so is 2 power
         // the number of 1s of the mask. Hence we deduce the size of the shift to
         // apply to the 64 or 32 bits word to get the index.
-        Magic& m = magics[s][ROOK - BISHOP];
-        m.mask   = expected_flips(ROOK, s, 0) & ~edges;
-        if(s== SQ_F5)
-          {  
-            std::cout<<"\nprintXXXXXXXX:\n";
-            Bitboard res = expected_flips(ROOK, s, 0);
-            Bitboard dummy = 0;
-            boardViewer(res,dummy);
-          }
+        Magic& m = magics[s][dr - DIAGO];
+        m.mask   = expected_flips(dr, s, 0) & ~edges;
         m.shift = 64 - popcount(m.mask);
         // Set the offset for the attacks table of the square. We have individual
         // table sizes for each square with "Fancy Magic Bitboards".
-        m.attacks = s == SQ_A1 ? LCoinTable : magics[s - 1][ROOK - BISHOP].attacks + size;
+        m.attacks = s == SQ_A1 ? table : magics[s - 1][dr - DIAGO].attacks + size;
         size      = 0;
 
         // Use Carry-Rippler trick to enumerate all subsets of masks[s] and
@@ -328,7 +343,7 @@ void magicBitboard()
         do
         {
             occupancy[size] = b;
-            reference[size] = expected_flips(ROOK, s, b);
+            reference[size] = expected_flips(dr, s, b);
 
             size++;
             b = (b - m.mask) & m.mask;
