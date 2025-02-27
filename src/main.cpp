@@ -124,9 +124,10 @@ void test()
     mc->selection(record);
     int childCount = 0;
     vnode * test_node = new vnode();
-    test_node->boardB = 0x4a000a200080060;
-    test_node->boardW = 0x8101c30002000;
-    
+    // test_node->boardB = 0x4a000a200080060;
+    // test_node->boardW = 0x8101c30002000;
+        test_node->boardW = 0x2000080000;
+    test_node->boardB = 0x10000000;
     test_node->turn = BLACK;
     vnode * children = mc->createValidChildren(test_node, childCount);
     std::cout<<"\nchild count:"<<childCount;
@@ -313,14 +314,23 @@ int main() {
     // 0x8505c30002000
     
     // 0x4a0008200080020
-    Bitboard playerBoard = 0x45a0008200080061;
-    Bitboard oppBoard = 0x8505c30002000;
+    
+    Bitboard playerBoard = 0x8000010001000000;
+    Bitboard oppBoard = 0x40211008050302;
         std::cout<<"\nstart 2333333333333333\n";
 
-    Square testSquare = SQ_F5;
+    Square testSquare = SQ_A1;
     const Bitboard & future_flips = actual_flips(testSquare, playerBoard, oppBoard);
     bool validFlip = future_flips ^ 0 ? true : false;
-    std::cout<<"\nvalid move:\n";
+    std::cout<<"\nthe answer:\n";
+
+    dummy->boardViewer(future_flips, boardx);
+
+    // dummy->boardViewer(connectivityMaskDiago[SQ_C2][0], boardx);
+    // dummy->boardViewer(connectivityMaskDiago[SQ_C2][1], boardx);
+    // dummy->boardViewer(connectivityMaskDiago[SQ_C2][2], boardx);
+    // dummy->boardViewer(connectivityMaskDiago[SQ_C2][3], boardx);
+    std::cout<<"\nvalid is move:\n";
     std::cout<<validFlip;
 
 //   const Bitboard & future_flips = actual_flips(sq, Black_occupied, White_occupied);

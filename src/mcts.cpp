@@ -105,7 +105,7 @@ uint64_t mcts::placeMove(Bitboard &board, int bit_pos)
     return board | (1 << bit_pos);
 }
 
-void mcts::boardViewer(uint64_t &boardB, uint64_t &boardW)
+void mcts::boardViewer(const bitboard::Bitboard & boardB, const bitboard::Bitboard & boardW)
 {
     //decode the bitboard
     uint64_t boardBtmp = boardB;

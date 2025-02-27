@@ -151,11 +151,11 @@ Bitboard expected_flips(DirectionType dr, Square sq, Bitboard occupied, bool sin
     return attacks;
 }
 
-void boardViewer(uint64_t &boardB, uint64_t &boardW)
+void boardViewer(const Bitboard &boardB, const Bitboard &boardW)
 {
     //decode the bitboard
-    uint64_t boardBtmp = boardB;
-    uint64_t boardWtmp = boardW;
+    Bitboard boardBtmp = boardB;
+    Bitboard boardWtmp = boardW;
     int n = 0;
     char board_char_arr[64] = {};
     for(int m =0; m < 64; ++m)
@@ -189,26 +189,26 @@ Bitboard actual_flips(const Square & sq, const Bitboard & Black_occupied, const 
 
     Bitboard diago_rays = magics[sq][DIAGO - DIAGO].rays_bb(Black_occupied);
     Bitboard diago_rayBlockers = Black_occupied & diago_rays;
-    // Bitboard dummy = 0;
+    Bitboard dummy = 0;
 
     for (int d = 0; d < 4; ++d)
     {
         const Bitboard & cMask = connectivityMaskOrtho[sq][d];
-        const Bitboard & opp_ray = White_occupied & cMask;
+        const Bitboard & opp_occupied_ray = White_occupied & cMask;
         const Bitboard & rayBlocker = ortho_rayBlockers & cMask;
-        const Bitboard & ortho_ray = ortho_rays & cMask;
-        const Bitboard & opp_diago_ray = opp_ray | rayBlocker;
-        const Bitboard & flip = ortho_ray ^ opp_diago_ray ? Bitboard(0) : opp_ray;
+        const Bitboard & ortho_ray = ortho_rays & (ortho_rayBlockers==0?0:ortho_rays) & cMask;
+        const Bitboard & opp_diago_ray = (opp_occupied_ray & ortho_ray)  | rayBlocker;
+        const Bitboard & flip = (ortho_ray ^ opp_diago_ray) ? Bitboard(0) : opp_occupied_ray & ortho_ray;
         flipped |= flip;
     }
     for (int d = 0; d < 4; ++d)
     {
         const Bitboard & cMask = connectivityMaskDiago[sq][d];
-        const Bitboard & opp_ray = White_occupied & cMask;
+        const Bitboard & opp_occupied_ray = White_occupied & cMask;
         const Bitboard & rayBlocker = diago_rayBlockers & cMask;
-        const Bitboard & diago_ray = diago_rays & cMask;
-        const Bitboard & opp_diago_ray = opp_ray | rayBlocker;
-        const Bitboard & flip = diago_ray ^ opp_diago_ray ? Bitboard(0) : opp_ray;
+        const Bitboard & diago_ray = diago_rays & (diago_rayBlockers==0?0:diago_rays)& cMask;
+        const Bitboard & opp_diago_ray = (opp_occupied_ray & diago_ray) | rayBlocker;
+        const Bitboard & flip = (diago_ray ^ opp_diago_ray)? Bitboard(0) : opp_occupied_ray & diago_ray;
         flipped |= flip;
     }
     // boardViewer(flipped, dummy);

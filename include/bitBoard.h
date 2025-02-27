@@ -153,7 +153,7 @@ Bitboard safe_destination(Square s, int step);
 
 void init_Bitboards();
 void buildConnectivityMask();
-void boardViewer(uint64_t &boardB, uint64_t &boardW);
+void boardViewer(const Bitboard &boardB, const Bitboard &boardW);
 Bitboard actual_flips(const Square & sq, const Bitboard & Black_occupied, const Bitboard & White_occupied);
 Bitboard expected_flips(DirectionType dr, Square sq, Bitboard occupied, bool singleDirection=false, int direction_selected=0);
 
