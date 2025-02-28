@@ -182,7 +182,7 @@ void boardViewer(const Bitboard &boardB, const Bitboard &boardW)
 // this is the actual flips
 Bitboard actual_flips(const Square & sq, const Bitboard & Black_occupied, const Bitboard & White_occupied) {
 
-    Bitboard flipped = 0;
+    Bitboard flipped(0);
 
     Bitboard ortho_rays = magics[sq][ORTHO - DIAGO].rays_bb(Black_occupied);
     Bitboard ortho_rayBlockers = Black_occupied & ortho_rays;
@@ -193,22 +193,32 @@ Bitboard actual_flips(const Square & sq, const Bitboard & Black_occupied, const 
 
     for (int d = 0; d < 4; ++d)
     {
-        const Bitboard & cMask = connectivityMaskOrtho[sq][d];
-        const Bitboard & opp_occupied_ray = White_occupied & cMask;
-        const Bitboard & rayBlocker = ortho_rayBlockers & cMask;
-        const Bitboard & ortho_ray = ortho_rays & (rayBlocker==0?0:ortho_rays) & cMask;
-        const Bitboard & opp_diago_ray = (opp_occupied_ray & ortho_ray)  | rayBlocker;
-        const Bitboard & flip = (ortho_ray ^ opp_diago_ray) ? Bitboard(0) : opp_occupied_ray & ortho_ray;
+        const Bitboard & cMask  = connectivityMaskOrtho[sq][d];
+        const Bitboard & rb     = ortho_rayBlockers & cMask;
+        
+        Bitboard flip(0);
+        if (rb ^ 0) {
+            const Bitboard & oRay   = ortho_rays & cMask;
+            const Bitboard & oOcc   = White_occupied & cMask;
+            const Bitboard & comb   = (oOcc & oRay) | rb;
+            if (oRay == comb)
+                flip = oOcc & oRay;
+        }
         flipped |= flip;
     }
     for (int d = 0; d < 4; ++d)
     {
-        const Bitboard & cMask = connectivityMaskDiago[sq][d];
-        const Bitboard & opp_occupied_ray = White_occupied & cMask;
-        const Bitboard & rayBlocker = diago_rayBlockers & cMask;
-        const Bitboard & diago_ray = diago_rays & (rayBlocker==0?0:diago_rays)& cMask;
-        const Bitboard & opp_diago_ray = (opp_occupied_ray & diago_ray) | rayBlocker;
-        const Bitboard & flip = (diago_ray ^ opp_diago_ray)? Bitboard(0) : opp_occupied_ray & diago_ray;
+        const Bitboard & cMask  = connectivityMaskDiago[sq][d];
+        const Bitboard & rb     = diago_rayBlockers & cMask;
+        
+        Bitboard flip(0);
+        if (rb ^ 0) {
+            const Bitboard & oRay   = diago_rays & cMask;
+            const Bitboard & oOcc   = White_occupied & cMask;
+            const Bitboard & comb   = (oOcc & oRay) | rb;
+            if (oRay == comb)
+                flip = oOcc & oRay;
+        }        
         flipped |= flip;
     }
     // boardViewer(flipped, dummy);
