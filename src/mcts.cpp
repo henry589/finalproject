@@ -160,7 +160,7 @@ vnode * mcts::createValidChildren(vnode *node, int &child_count)
             {
                 const Bitboard & mod_cur_boardB = node->turn == BLACK? future_flips | cur_boardB | (1ULL<<sq) : ~future_flips & cur_boardB;
                 const Bitboard & mod_cur_boardW = node->turn == WHITE? future_flips | cur_boardW | (1ULL<<sq) : ~future_flips & cur_boardW;
-                node->append_child(mod_cur_boardB, mod_cur_boardW, !node->turn);
+                node->append_child(mod_cur_boardB, mod_cur_boardW, !node->turn, sq);
                 ++child_count;
             }
             

@@ -196,7 +196,7 @@ Bitboard actual_flips(const Square & sq, const Bitboard & Black_occupied, const 
         const Bitboard & cMask = connectivityMaskOrtho[sq][d];
         const Bitboard & opp_occupied_ray = White_occupied & cMask;
         const Bitboard & rayBlocker = ortho_rayBlockers & cMask;
-        const Bitboard & ortho_ray = ortho_rays & (ortho_rayBlockers==0?0:ortho_rays) & cMask;
+        const Bitboard & ortho_ray = ortho_rays & (rayBlocker==0?0:ortho_rays) & cMask;
         const Bitboard & opp_diago_ray = (opp_occupied_ray & ortho_ray)  | rayBlocker;
         const Bitboard & flip = (ortho_ray ^ opp_diago_ray) ? Bitboard(0) : opp_occupied_ray & ortho_ray;
         flipped |= flip;
@@ -206,7 +206,7 @@ Bitboard actual_flips(const Square & sq, const Bitboard & Black_occupied, const 
         const Bitboard & cMask = connectivityMaskDiago[sq][d];
         const Bitboard & opp_occupied_ray = White_occupied & cMask;
         const Bitboard & rayBlocker = diago_rayBlockers & cMask;
-        const Bitboard & diago_ray = diago_rays & (diago_rayBlockers==0?0:diago_rays)& cMask;
+        const Bitboard & diago_ray = diago_rays & (rayBlocker==0?0:diago_rays)& cMask;
         const Bitboard & opp_diago_ray = (opp_occupied_ray & diago_ray) | rayBlocker;
         const Bitboard & flip = (diago_ray ^ opp_diago_ray)? Bitboard(0) : opp_occupied_ray & diago_ray;
         flipped |= flip;

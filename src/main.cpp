@@ -30,7 +30,7 @@ void test()
     // this is a routine to simulate addition of sibling to the children head
     for(int i =1; i <6; ++i)
     {
-        parent_node->append_child(i, i, s);
+        parent_node->append_child(i, i, s, 0);
 
     }
     std::cout<<"done:"<<std::endl;
@@ -73,9 +73,9 @@ void test()
         if(n == 3) 
         {
             selected_node =asd2;
-            selected_node->append_child(6,0x76,s);
-            selected_node->append_child(7,0x76,s);
-            selected_node->append_child(8,0x76,s);
+            selected_node->append_child(6,0x76,s, 0);
+            selected_node->append_child(7,0x76,s, 0);
+            selected_node->append_child(8,0x76,s, 0);
             selected_node->sim_visits = 1;
             selected_node->sim_reward = 18;
 
@@ -88,15 +88,15 @@ void test()
             nextGen->get_next_sibling()->sim_reward = 3;
             nextGen->get_next_sibling()->get_next_sibling()->sim_visits = 4;
             nextGen->get_next_sibling()->get_next_sibling()->sim_reward = 6;
-            nextGen->append_child(9,0x92,s);
-            nextGen->append_child(10,0x93,s);
+            nextGen->append_child(9,0x92,s,0);
+            nextGen->append_child(10,0x93,s,0);
 
             
             nextnextGen = nextGen->get_children();
             // record = nextnextGen->get_next_sibling();
-            nextnextGen->get_next_sibling()->append_child(11,0x00,s);
-            nextnextGen->append_child(12,0x00,s);
-            nextnextGen->append_child(13,0x00,s);
+            nextnextGen->get_next_sibling()->append_child(11,0x00,s,0);
+            nextnextGen->append_child(12,0x00,s,0);
+            nextnextGen->append_child(13,0x00,s,0);
             nextnextGen->sim_visits = 2;
             nextnextGen->sim_reward = 20;
             nextnextGen->get_next_sibling()->sim_visits=1;
@@ -126,14 +126,15 @@ void test()
     vnode * test_node = new vnode();
     // test_node->boardB = 0x4a000a200080060;
     // test_node->boardW = 0x8101c30002000;
-        test_node->boardW = 0x2000080000;
-    test_node->boardB = 0x10000000;
+        test_node->boardW = 0x81402400d0492a44;
+    test_node->boardB = 0x4200000821940028;
     test_node->turn = BLACK;
     vnode * children = mc->createValidChildren(test_node, childCount);
     std::cout<<"\nchild count:"<<childCount;
     vnode * tmpChildren = children;
     while(tmpChildren != nullptr)
     {
+        std::cout<<"\nmove:"<<tmpChildren->action_taken;
         mc->boardViewer(tmpChildren->boardB, tmpChildren->boardW);
         tmpChildren = tmpChildren->get_next_sibling();
     }
@@ -274,7 +275,7 @@ void test_uct_formula()
     Side s = BLACK;
     vnode * parent_node = new vnode();
     parent_node->sim_visits = 5;
-    parent_node->append_child(13,14,s);
+    parent_node->append_child(13,14,s,0);
     vnode * testnode = parent_node->get_children();
     testnode->sim_visits = 100;
     testnode->sim_reward = 3;
@@ -315,11 +316,11 @@ int main() {
     
     // 0x4a0008200080020
     
-    Bitboard playerBoard = 0x8000010001000000;
-    Bitboard oppBoard = 0x40211008050302;
+    Bitboard playerBoard = 0x100000000000;
+    Bitboard oppBoard = 0xa0000000000000;
         std::cout<<"\nstart 2333333333333333\n";
 
-    Square testSquare = SQ_A1;
+    Square testSquare = SQ_G8;
     const Bitboard & future_flips = actual_flips(testSquare, playerBoard, oppBoard);
     bool validFlip = future_flips ^ 0 ? true : false;
     std::cout<<"\nthe answer:\n";
