@@ -52,29 +52,38 @@ int fast_rand() {
     seedPcg();
 
     // Generate 32 bits of randomness
-    uint32_t r = pcg32();
+    const uint32_t & r = pcg32();
 
     // Map 32-bit result into [0, RAND_MAX]
     // NOTE: This introduces a tiny modulo bias unless (RAND_MAX+1) divides 2^32
     return static_cast<int>(r % (RAND_MAX + 1U));
 }
 
-// Function to generate a high-entropy seed sequence
 std::mt19937 createGenerator() {
     std::random_device rd;
-    std::array<int, 8> seed_data;
-    for (auto& seed : seed_data) {
-        seed = rd();  // Collect entropy from hardware
+    // Collect multiple 32-bit values from the random_device
+    std::array<std::uint32_t, 8> seed_data;
+    for (auto& val : seed_data) {
+        val = rd();
     }
-    std::seed_seq seed_seq(seed_data.begin(), seed_data.end());  // Create better randomness
-    return std::mt19937(seed_seq);  // Return Mersenne Twister engine with strong seed
+    std::seed_seq seedSeq(seed_data.begin(), seed_data.end());
+    return std::mt19937(seedSeq);
 }
 
-// Thread-local random number generator for thread safety
+// 2) Thread-local engine - each thread gets its own RNG, no locking
 thread_local std::mt19937 generator = createGenerator();
 
-// Function to generate a random number within [min, max]
+// 3) Super-fast integer generator, with a tiny modulo bias
 int getRandomNumber(int min, int max) {
-    std::uniform_int_distribution<int> distribution(min, max);
-    return distribution(generator);
+    // One RNG call -> 32-bit random number
+    const std::uint32_t &r = generator();
+
+    // Range size
+    const int & range = (max - min + 1);
+
+    // Slight bias if range doesn't divide 2^32
+    // For most ranges, this bias is negligible.
+    const int & val = r % range;
+
+    return min + val;
 }

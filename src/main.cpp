@@ -12,163 +12,166 @@
 #include "../include/nodeManager.h"
 #include "../include/mcts.h"
 #include "../include/bitBoard.h"
+#include "../include/misc.h"
 
 using namespace bitboard;
 
-MemoryPool vnode::pool = MemoryPool(sizeof(vnode),100000);
+MemoryPool vnode::pool = MemoryPool(sizeof(vnode), 100000);
 std::stringstream vnode::ss;
-
 
 void test()
 {
-    vnode * list  = NULL;
+	vnode* list = NULL;
 
-    Side s = BLACK;
-    vnode * parent_node = new vnode();
-    parent_node->boardB = 0;
-    std::cout<<"start:"<<std::endl;
-    // this is a routine to simulate addition of sibling to the children head
-    for(int i =1; i <6; ++i)
-    {
-        parent_node->append_child(i, i, bool(s), 0);
+	Side s = BLACK;
+	vnode* parent_node = new vnode();
+	parent_node->boardB = 0;
+	std::cout << "start:" << std::endl;
+	// this is a routine to simulate addition of sibling to the children head
+	for (int i = 1; i < 6; ++i)
+	{
+		parent_node->append_child(i, i, bool(s), 0);
+	}
+	std::cout << "done:" << std::endl;
 
-    }
-    std::cout<<"done:"<<std::endl;
+	// to simulate the rollout of the children
+	vnode* asd = parent_node->get_children();
+	int dummycounter = 0;
+	while (asd != nullptr)
+	{
+		std::cout << asd->boardB << std::endl;
+		asd->sim_visits = 2;
+		asd->sim_reward = 11;
 
-    // to simulate the rollout of the children
-    vnode * asd = parent_node->get_children();
-    int dummycounter = 0;
-    while(asd != nullptr)
-    {
-        std::cout<< asd->boardB<<std::endl;
-        asd->sim_visits = 2;
-        asd->sim_reward = 11;
+		dummycounter++;
+		asd = asd->get_next_sibling();
+	}
 
-        dummycounter++;
-        asd = asd->get_next_sibling();
-    }
-    
+	vnode* asd2 = parent_node->get_children();
+	std::cout << "second:" << std::endl;
+	int n = 0;
+	while (asd2 != nullptr)
+	{
+		std::cout << asd2->boardB << std::endl;
+		asd2 = asd2->get_next_sibling();
 
-       vnode * asd2 = parent_node->get_children();
-       std::cout<<"second:"<<std::endl;
-       int n = 0;
-    while(asd2!= nullptr)
-    {
-        std::cout<< asd2->boardB<<std::endl;
-        asd2 = asd2->get_next_sibling();
+		n++;
+	}
+	// vnode::BFS(parent_node);
+	std::cout << "third:" << std::endl;
+	asd2 = parent_node->get_children();
+	parent_node->sim_visits = 2;
+	vnode* selected_node = nullptr;
+	vnode* nextGen = nullptr;
+	vnode* nextnextGen = nullptr;
+	vnode* record = nullptr;
+	n = 0;
+	while (asd2 != nullptr)
+	{
+		if (n == 3)
+		{
+			selected_node = asd2;
+			selected_node->append_child(6, 0x76, s, 0);
+			selected_node->append_child(7, 0x76, s, 0);
+			selected_node->append_child(8, 0x76, s, 0);
+			selected_node->sim_visits = 200;
+			selected_node->sim_reward = 18;
 
-        n++;
-    }
-    // vnode::BFS(parent_node);
-       std::cout<<"third:"<<std::endl;
-    asd2 = parent_node->get_children();
-    parent_node->sim_visits = 2;
-    vnode * selected_node = nullptr;
-    vnode * nextGen = nullptr;
-    vnode * nextnextGen = nullptr;
-    vnode * record = nullptr;
-    n = 0;
-        while(asd2!= nullptr)
-    {
-        if(n == 3) 
-        {
-            selected_node =asd2;
-            selected_node->append_child(6,0x76,s, 0);
-            selected_node->append_child(7,0x76,s, 0);
-            selected_node->append_child(8,0x76,s, 0);
-            selected_node->sim_visits = 200;
-            selected_node->sim_reward = 18;
+			nextGen = selected_node->get_children();
+			nextGen->sim_visits = 5;
+			nextGen->sim_reward = 20;
+			nextGen->get_next_sibling()->sim_visits = 3;
+			nextGen->get_next_sibling()->sim_reward = 3;
+			nextGen->get_next_sibling()->get_next_sibling()->sim_visits = 4;
+			nextGen->get_next_sibling()->get_next_sibling()->sim_reward = 6;
+			nextGen->append_child(9, 0x92, s, 0);
+			nextGen->append_child(10, 0x93, s, 0);
 
+			nextnextGen = nextGen->get_children();
+			// record = nextnextGen->get_next_sibling();
+			nextnextGen->get_next_sibling()->append_child(11, 0x00, s, 0);
+			nextnextGen->append_child(12, 0x00, s, 0);
+			nextnextGen->append_child(13, 0x00, s, 0);
+			nextnextGen->sim_visits = 2;
+			nextnextGen->sim_reward = 20;
+			nextnextGen->get_next_sibling()->sim_visits = 1;
+			nextnextGen->get_next_sibling()->sim_reward = 30;
+		}
+		if (n == 1)
+		{
+			record = asd2;
+		}
+		std::cout << asd2->boardB << ",p:" << asd2->get_parent()->boardB << std::endl;
+		asd2 = asd2->get_next_sibling();
 
+		n++;
+	}
 
-            nextGen = selected_node->get_children();
-            nextGen->sim_visits = 5;
-            nextGen->sim_reward = 20;
-            nextGen->get_next_sibling()->sim_visits = 3;
-            nextGen->get_next_sibling()->sim_reward = 3;
-            nextGen->get_next_sibling()->get_next_sibling()->sim_visits = 4;
-            nextGen->get_next_sibling()->get_next_sibling()->sim_reward = 6;
-            nextGen->append_child(9,0x92,s,0);
-            nextGen->append_child(10,0x93,s,0);
+	//generate dot format
+	vnode::BFS(parent_node, vnode::OpType::TRAVERSE, false);
+	std::string x = vnode::get_dot_formatted();
+	std::cout << "\nsearch:" << x;
+	std::cout << "size of vnode:" << sizeof(vnode);
 
-            
-            nextnextGen = nextGen->get_children();
-            // record = nextnextGen->get_next_sibling();
-            nextnextGen->get_next_sibling()->append_child(11,0x00,s,0);
-            nextnextGen->append_child(12,0x00,s,0);
-            nextnextGen->append_child(13,0x00,s,0);
-            nextnextGen->sim_visits = 2;
-            nextnextGen->sim_reward = 20;
-            nextnextGen->get_next_sibling()->sim_visits=1;
-            nextnextGen->get_next_sibling()->sim_reward=30;
+	mcts* mc = new mcts();
+	mc->selection(selected_node);
 
-        }
-        if(n==1)
-        {
-            record = asd2;
-        }
-        std::cout<< asd2->boardB<<",p:"<<asd2->get_parent()->boardB<<std::endl;
-        asd2 = asd2->get_next_sibling();
-       
-        n++;
-    }
+	int childCount = 0;
+	vnode* test_node = new vnode();
+	// test_node->boardB = 0x4a000a200080060;
+	// test_node->boardW = 0x8101c30002000;
+	//test_node->boardW = 0x81402400d0492a44;
+	//test_node->boardB = 0x4200000821940028;	
+	test_node->boardW = 0x1008000000;
+	test_node->boardB = 0x810000000;
+	test_node->turn = BLACK;
+	//vnode* children = mc->createValidChildren(test_node, childCount);
+	//std::cout << "\nchild count:" << childCount;
+	//vnode* tmpChildren = children;
+	//while (tmpChildren != nullptr)
+	//{
+	//	std::cout << "\nmove:" << tmpChildren->action_taken;
+	//	mc->boardViewer(tmpChildren->boardB, tmpChildren->boardW);
+	//	tmpChildren = tmpChildren->get_next_sibling();
+	//}
 
+	vnode* result = mc->expansion(test_node);
+	vnode::BFS(test_node, vnode::OpType::TRAVERSE, false);
+	std::string x2 = vnode::get_dot_formatted();
+	std::cout << "\nsearch:" << x2;
+	// uint64_t boardB = 0x89240a904394248a;
+	// uint64_t boardW = 0x2218012d20008014;
+	 mc->boardViewer(result->boardB, result->boardW);
+	// std::cout << "\n\nplaced board:\n";
 
-    //generate dot format
-    vnode::BFS(parent_node, vnode::OpType::TRAVERSE, false);
-    std::string x = vnode::get_dot_formatted();
-    std::cout << "\nsearch:"<<x;
-    std::cout<<"size of vnode:"<< sizeof(vnode);
-
-    mcts * mc = new mcts();
-    mc->selection(selected_node);
-     int childCount = 0;
-     vnode * test_node = new vnode();
-     // test_node->boardB = 0x4a000a200080060;
-     // test_node->boardW = 0x8101c30002000;
-         test_node->boardW = 0x81402400d0492a44;
-     test_node->boardB = 0x4200000821940028;
-     test_node->turn = BLACK;
-     vnode * children = mc->createValidChildren(test_node, childCount);
-     std::cout<<"\nchild count:"<<childCount;
-     vnode * tmpChildren = children;
-     while(tmpChildren != nullptr)
-     {
-         std::cout<<"\nmove:"<<tmpChildren->action_taken;
-         mc->boardViewer(tmpChildren->boardB, tmpChildren->boardW);
-         tmpChildren = tmpChildren->get_next_sibling();
-     }
-    // uint64_t boardB = 0x89240a904394248a;
-    // uint64_t boardW = 0x2218012d20008014;
-    // mc->boardViewer(boardB, boardW);
-    // std::cout << "\n\nplaced board:\n";
-
-    // uint64_t movePlaced = mc->placeMove(boardB, 5);
-    // mc->boardViewer(movePlaced, boardW);
-   
-
+	// uint64_t movePlaced = mc->placeMove(boardB, 5);
+	// mc->boardViewer(movePlaced, boardW);
+	for (int m = 0; m < 5; m++)
+	{
+		std::cout << "\nrandom number:" << getRandomNumber(0, 5);
+		//std::cout << ",random number no bound:" << fast_rand();
+	}
 }
 
-
 void singleThreadTest() {
-    std::cout << "Running single-threaded test...\n";
+	std::cout << "Running single-threaded test...\n";
 
-    // Create a memory pool with block size 32 bytes and chunk size 10 blocks
-    MemoryPool pool(32, 10);
+	// Create a memory pool with block size 32 bytes and chunk size 10 blocks
+	MemoryPool pool(32, 10);
 
-    // Allocate some blocks
-    void* block1 = pool.allocate();
-    void* block2 = pool.allocate();
-    void* block3 = pool.allocate();
+	// Allocate some blocks
+	void* block1 = pool.allocate();
+	void* block2 = pool.allocate();
+	void* block3 = pool.allocate();
 
-    // Deallocate a block and allocate again (to check reuse)
-    pool.deallocate(block2);
-    void* block4 = pool.allocate();
+	// Deallocate a block and allocate again (to check reuse)
+	pool.deallocate(block2);
+	void* block4 = pool.allocate();
 
-    // Ensure the same block was reused
-    assert(block2 == block4);
+	// Ensure the same block was reused
+	assert(block2 == block4);
 
-    std::cout << "Single-threaded test passed.\n";
+	std::cout << "Single-threaded test passed.\n";
 }
 
 //void multiThreadTest() {
@@ -235,104 +238,102 @@ void singleThreadTest() {
 //}
 
 void valueVerificationTest() {
-    std::cout << "Running value verification test...\n";
+	std::cout << "Running value verification test...\n";
 
-    const size_t blockSize = 32;
-    const size_t chunkSize = 10;
+	const size_t blockSize = 32;
+	const size_t chunkSize = 10;
 
-    MemoryPool pool(blockSize, chunkSize);
+	MemoryPool pool(blockSize, chunkSize);
 
-    // Allocate blocks and write unique data to each
-    void* blocks[chunkSize];
-    for (size_t i = 0; i < chunkSize; ++i) {
-        blocks[i] = pool.allocate();
+	// Allocate blocks and write unique data to each
+	void* blocks[chunkSize];
+	for (size_t i = 0; i < chunkSize; ++i) {
+		blocks[i] = pool.allocate();
 
-        // Write data to the block
-        int value = static_cast<int>(i); // Example unique value
-        std::memset(blocks[i], value, blockSize); // Fill block with the value
-    }
+		// Write data to the block
+		int value = static_cast<int>(i); // Example unique value
+		std::memset(blocks[i], value, blockSize); // Fill block with the value
+	}
 
-    // Verify that data is preserved
-    for (size_t i = 0; i < chunkSize; ++i) {
-        int value = static_cast<int>(i); // Expected value
-        char expected[blockSize];
-        std::memset(expected, value, blockSize); // Create expected pattern
+	// Verify that data is preserved
+	for (size_t i = 0; i < chunkSize; ++i) {
+		int value = static_cast<int>(i); // Expected value
+		char expected[blockSize];
+		std::memset(expected, value, blockSize); // Create expected pattern
 
-        // Compare memory content
-        assert(std::memcmp(blocks[i], expected, blockSize) == 0);
-    }
+		// Compare memory content
+		assert(std::memcmp(blocks[i], expected, blockSize) == 0);
+	}
 
-    // Deallocate all blocks
-    for (size_t i = 0; i < chunkSize; ++i) {
-        pool.deallocate(blocks[i]);
-    }
+	// Deallocate all blocks
+	for (size_t i = 0; i < chunkSize; ++i) {
+		pool.deallocate(blocks[i]);
+	}
 
-    std::cout << "Value verification test passed.\n";
+	std::cout << "Value verification test passed.\n";
 }
 
 void test_uct_formula()
 {
-    Side s = BLACK;
-    vnode * parent_node = new vnode();
-    parent_node->sim_visits = 5;
-    parent_node->append_child(13,14,s,0);
-    vnode * testnode = parent_node->get_children();
-    testnode->sim_visits = 100;
-    testnode->sim_reward = 3;
-    // testnode->explorationConstant = 1.414;
-    std::cout<<"\nuct calculated:"<<testnode->calc_uct()<<std::endl;
-
+	Side s = BLACK;
+	vnode* parent_node = new vnode();
+	parent_node->sim_visits = 5;
+	parent_node->append_child(13, 14, s, 0);
+	vnode* testnode = parent_node->get_children();
+	testnode->sim_visits = 100;
+	testnode->sim_reward = 3;
+	// testnode->explorationConstant = 1.414;
+	std::cout << "\nuct calculated:" << testnode->calc_uct() << std::endl;
 }
 
 int main() {
-    // try {
-    //     valueVerificationTest();
+	// try {
+	//     valueVerificationTest();
 
-    //     std::cout << "All tests passed successfully!\n";
-    // } catch (const std::exception& e) {
-    //     std::cerr << "Test failed: " << e.what() << '\n';
-    //     return 1;
-    // }
-    init_Bitboards();
+	//     std::cout << "All tests passed successfully!\n";
+	// } catch (const std::exception& e) {
+	//     std::cerr << "Test failed: " << e.what() << '\n';
+	//     return 1;
+	// }
+	init_Bitboards();
 
-    test();
-    //test_uct_formula();
-    std::cout << "hello";
-    // std::cout<<"\nindexed:"<<magics[SQ_F5][ORTHO - DIAGO].rays_bb(0x2000008400000020);
-        
-    
-    // uint64_t boardx = 0;
-    // mcts *dummy = new mcts();
-    // std::cout << "\n\nconnectivity mask 0:\n";
-    // dummy->boardViewer(connectivityMaskOrtho[SQ_F5][0], boardx);
-    // std::cout << "\n\nconnectivity mask 1:\n";
-    // dummy->boardViewer(connectivityMaskOrtho[SQ_F5][1], boardx);
-    // std::cout << "\n\nconnectivity mask 2:\n";
-    // dummy->boardViewer(connectivityMaskOrtho[SQ_F5][2], boardx);
-    // std::cout << "\n\nconnectivity mask 3:\n";
-    // dummy->boardViewer(connectivityMaskOrtho[SQ_F5][3], boardx);
-    // // 0x101430002000
-    // // 0x8505c30002000
-    
-    // // 0x4a0008200080020
-    
-    // Bitboard playerBoard = 0x100000000000;
-    // Bitboard oppBoard = 0xa0000000000000;
-    //     std::cout<<"\nstart 2333333333333333\n";
+	test();
+	test_uct_formula();
+	std::cout << "hello";
+	// std::cout<<"\nindexed:"<<magics[SQ_F5][ORTHO - DIAGO].rays_bb(0x2000008400000020);
 
-    // Square testSquare = SQ_G8;
-    // const Bitboard & future_flips = actual_flips(testSquare, playerBoard, oppBoard);
-    // bool validFlip = future_flips ^ 0 ? true : false;
-    // std::cout<<"\nthe answer:\n";
+	// uint64_t boardx = 0;
+	// mcts *dummy = new mcts();
+	// std::cout << "\n\nconnectivity mask 0:\n";
+	// dummy->boardViewer(connectivityMaskOrtho[SQ_F5][0], boardx);
+	// std::cout << "\n\nconnectivity mask 1:\n";
+	// dummy->boardViewer(connectivityMaskOrtho[SQ_F5][1], boardx);
+	// std::cout << "\n\nconnectivity mask 2:\n";
+	// dummy->boardViewer(connectivityMaskOrtho[SQ_F5][2], boardx);
+	// std::cout << "\n\nconnectivity mask 3:\n";
+	// dummy->boardViewer(connectivityMaskOrtho[SQ_F5][3], boardx);
+	// // 0x101430002000
+	// // 0x8505c30002000
 
-    // dummy->boardViewer(future_flips, boardx);
+	// // 0x4a0008200080020
 
-    // // dummy->boardViewer(connectivityMaskDiago[SQ_C2][0], boardx);
-    // // dummy->boardViewer(connectivityMaskDiago[SQ_C2][1], boardx);
-    // // dummy->boardViewer(connectivityMaskDiago[SQ_C2][2], boardx);
-    // // dummy->boardViewer(connectivityMaskDiago[SQ_C2][3], boardx);
-    // std::cout<<"\nvalid is move:\n";
-    // std::cout<<validFlip;
+	// Bitboard playerBoard = 0x100000000000;
+	// Bitboard oppBoard = 0xa0000000000000;
+	//     std::cout<<"\nstart 2333333333333333\n";
+
+	// Square testSquare = SQ_G8;
+	// const Bitboard & future_flips = actual_flips(testSquare, playerBoard, oppBoard);
+	// bool validFlip = future_flips ^ 0 ? true : false;
+	// std::cout<<"\nthe answer:\n";
+
+	// dummy->boardViewer(future_flips, boardx);
+
+	// // dummy->boardViewer(connectivityMaskDiago[SQ_C2][0], boardx);
+	// // dummy->boardViewer(connectivityMaskDiago[SQ_C2][1], boardx);
+	// // dummy->boardViewer(connectivityMaskDiago[SQ_C2][2], boardx);
+	// // dummy->boardViewer(connectivityMaskDiago[SQ_C2][3], boardx);
+	// std::cout<<"\nvalid is move:\n";
+	// std::cout<<validFlip;
 
 //   const Bitboard & future_flips = actual_flips(sq, Black_occupied, White_occupied);
 //     bool validFlip = future_flips ^ 0 ? true : false; // means got possible flips
@@ -342,6 +343,5 @@ int main() {
 
 //     std::cout<<":"<<nb<<"\n";
 //     dummy->boardViewer(nb, boardx);
-    return 0;
-    
+	return 0;
 }
