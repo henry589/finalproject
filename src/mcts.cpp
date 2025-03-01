@@ -5,54 +5,71 @@
 
 using namespace bitboard;
 //select the nodes to form a path down the tree
-vnode * mcts::selection(vnode * root)
+vnode* mcts::selection(vnode* const root)
 {
-    //select child based on UCT
-    // ok we need to traverse down the nodes
-    vnode * curr_node = root;
-    while(curr_node != nullptr)
-    {
-        vnode * best_child = nullptr;
-        double best_uct_value = 0.0;
-        vnode * children = curr_node->get_children();
+    vnode* curr_node = root;
 
-        //means a leaf node is reached, has a potential child?
-        if(children == nullptr)
+    while (curr_node) 
+    {
+        // Check if leaf (no children)
+        vnode* child = curr_node->get_children();
+        if (!child)
         {
-            //leaf node reached
-            std::cout<<"\nselected leaf:"<<curr_node->boardB<<std::endl;
+            std::cout << "\nselected leaf: " << curr_node->boardB << '\n';
             return curr_node;
         }
-        while(children != nullptr)
-        {
-            //current children is the best so far
-            double cur_uct_value = children->calc_uct();
-            if(cur_uct_value > best_uct_value )
-            {
-                best_uct_value = cur_uct_value;
-                // set the desired node each time uct updated
-                best_child = children;
-            }
-            
-            // means this an unexplored child
-            if(children->sim_visits == 0)
-            {
-                // perform random choice whether to take this children or not
-                if(random_bool(0.5))
-                {
-                    best_child = children;
-                }  
 
+        // Track best visited child & UCT value
+        vnode* best_child = nullptr;
+        double best_uct_value = -std::numeric_limits<double>::infinity();
+
+        // Collect unvisited children here
+        std::vector<vnode*> unvisited_nodes;
+        unvisited_nodes.reserve(8); // Optional small reserve
+
+        // Traverse all siblings
+        for (; child; child = child->get_next_sibling())
+        {
+            // If unvisited, add to the vector
+            if (child->sim_visits == 0)
+            {
+                unvisited_nodes.push_back(child);
             }
-            
-            children = children->get_next_sibling();            
+            else
+            {
+                // Visited: compare UCT
+                double cur_uct_value = child->calc_uct();
+
+                if (cur_uct_value > best_uct_value)
+                {
+                    best_uct_value = cur_uct_value;
+                    best_child = child;
+                }
+                // Tie-breaker
+                else if (cur_uct_value == best_uct_value && (fast_rand() % 2))
+                {
+                    best_child = child;
+                }
+            }
         }
-        // std::cout<<"\ndsrd_n:"<<desired_node->boardB<<"\n";
-        //goes to the next layer of tree for the selected children
-        // std::cout<<"\ndesired node:"<<desired_node->boardB<<"\n";
+
+        // If unvisited children exist, pick one at random & return
+        if (!unvisited_nodes.empty())
+        {
+            std::size_t idx = fast_rand() % unvisited_nodes.size();
+            vnode* selected = unvisited_nodes[idx];
+
+            std::cout << "\nselected leaf: " << selected->boardB
+                      << ", size: " << unvisited_nodes.size() << '\n';
+
+            return selected;
+        }
+
+        // Otherwise, go down to the best visited child
         curr_node = best_child;
     }
-    // return a nullptr if no selection could be made
+
+    // If we somehow exit the loop with no node, return nullptr
     return nullptr;
 }
 

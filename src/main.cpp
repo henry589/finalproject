@@ -76,7 +76,7 @@ void test()
             selected_node->append_child(6,0x76,s, 0);
             selected_node->append_child(7,0x76,s, 0);
             selected_node->append_child(8,0x76,s, 0);
-            selected_node->sim_visits = 1;
+            selected_node->sim_visits = 200;
             selected_node->sim_reward = 18;
 
 
@@ -100,7 +100,7 @@ void test()
             nextnextGen->sim_visits = 2;
             nextnextGen->sim_reward = 20;
             nextnextGen->get_next_sibling()->sim_visits=1;
-            nextnextGen->get_next_sibling()->sim_reward=3;
+            nextnextGen->get_next_sibling()->sim_reward=30;
 
         }
         if(n==1)
@@ -121,23 +121,23 @@ void test()
     std::cout<<"size of vnode:"<< sizeof(vnode);
 
     mcts * mc = new mcts();
-    mc->selection(record);
-    int childCount = 0;
-    vnode * test_node = new vnode();
-    // test_node->boardB = 0x4a000a200080060;
-    // test_node->boardW = 0x8101c30002000;
-        test_node->boardW = 0x81402400d0492a44;
-    test_node->boardB = 0x4200000821940028;
-    test_node->turn = BLACK;
-    vnode * children = mc->createValidChildren(test_node, childCount);
-    std::cout<<"\nchild count:"<<childCount;
-    vnode * tmpChildren = children;
-    while(tmpChildren != nullptr)
-    {
-        std::cout<<"\nmove:"<<tmpChildren->action_taken;
-        mc->boardViewer(tmpChildren->boardB, tmpChildren->boardW);
-        tmpChildren = tmpChildren->get_next_sibling();
-    }
+    mc->selection(selected_node);
+    // int childCount = 0;
+    // vnode * test_node = new vnode();
+    // // test_node->boardB = 0x4a000a200080060;
+    // // test_node->boardW = 0x8101c30002000;
+    //     test_node->boardW = 0x81402400d0492a44;
+    // test_node->boardB = 0x4200000821940028;
+    // test_node->turn = BLACK;
+    // vnode * children = mc->createValidChildren(test_node, childCount);
+    // std::cout<<"\nchild count:"<<childCount;
+    // vnode * tmpChildren = children;
+    // while(tmpChildren != nullptr)
+    // {
+    //     std::cout<<"\nmove:"<<tmpChildren->action_taken;
+    //     mc->boardViewer(tmpChildren->boardB, tmpChildren->boardW);
+    //     tmpChildren = tmpChildren->get_next_sibling();
+    // }
     // uint64_t boardB = 0x89240a904394248a;
     // uint64_t boardW = 0x2218012d20008014;
     // mc->boardViewer(boardB, boardW);
@@ -298,41 +298,41 @@ int main() {
     test();
     test_uct_formula();
 
-    std::cout<<"\nindexed:"<<magics[SQ_F5][ORTHO - DIAGO].rays_bb(0x2000008400000020);
+    // std::cout<<"\nindexed:"<<magics[SQ_F5][ORTHO - DIAGO].rays_bb(0x2000008400000020);
         
     
-    uint64_t boardx = 0;
-    mcts *dummy = new mcts();
-    std::cout << "\n\nconnectivity mask 0:\n";
-    dummy->boardViewer(connectivityMaskOrtho[SQ_F5][0], boardx);
-    std::cout << "\n\nconnectivity mask 1:\n";
-    dummy->boardViewer(connectivityMaskOrtho[SQ_F5][1], boardx);
-    std::cout << "\n\nconnectivity mask 2:\n";
-    dummy->boardViewer(connectivityMaskOrtho[SQ_F5][2], boardx);
-    std::cout << "\n\nconnectivity mask 3:\n";
-    dummy->boardViewer(connectivityMaskOrtho[SQ_F5][3], boardx);
-    // 0x101430002000
-    // 0x8505c30002000
+    // uint64_t boardx = 0;
+    // mcts *dummy = new mcts();
+    // std::cout << "\n\nconnectivity mask 0:\n";
+    // dummy->boardViewer(connectivityMaskOrtho[SQ_F5][0], boardx);
+    // std::cout << "\n\nconnectivity mask 1:\n";
+    // dummy->boardViewer(connectivityMaskOrtho[SQ_F5][1], boardx);
+    // std::cout << "\n\nconnectivity mask 2:\n";
+    // dummy->boardViewer(connectivityMaskOrtho[SQ_F5][2], boardx);
+    // std::cout << "\n\nconnectivity mask 3:\n";
+    // dummy->boardViewer(connectivityMaskOrtho[SQ_F5][3], boardx);
+    // // 0x101430002000
+    // // 0x8505c30002000
     
-    // 0x4a0008200080020
+    // // 0x4a0008200080020
     
-    Bitboard playerBoard = 0x100000000000;
-    Bitboard oppBoard = 0xa0000000000000;
-        std::cout<<"\nstart 2333333333333333\n";
+    // Bitboard playerBoard = 0x100000000000;
+    // Bitboard oppBoard = 0xa0000000000000;
+    //     std::cout<<"\nstart 2333333333333333\n";
 
-    Square testSquare = SQ_G8;
-    const Bitboard & future_flips = actual_flips(testSquare, playerBoard, oppBoard);
-    bool validFlip = future_flips ^ 0 ? true : false;
-    std::cout<<"\nthe answer:\n";
+    // Square testSquare = SQ_G8;
+    // const Bitboard & future_flips = actual_flips(testSquare, playerBoard, oppBoard);
+    // bool validFlip = future_flips ^ 0 ? true : false;
+    // std::cout<<"\nthe answer:\n";
 
-    dummy->boardViewer(future_flips, boardx);
+    // dummy->boardViewer(future_flips, boardx);
 
-    // dummy->boardViewer(connectivityMaskDiago[SQ_C2][0], boardx);
-    // dummy->boardViewer(connectivityMaskDiago[SQ_C2][1], boardx);
-    // dummy->boardViewer(connectivityMaskDiago[SQ_C2][2], boardx);
-    // dummy->boardViewer(connectivityMaskDiago[SQ_C2][3], boardx);
-    std::cout<<"\nvalid is move:\n";
-    std::cout<<validFlip;
+    // // dummy->boardViewer(connectivityMaskDiago[SQ_C2][0], boardx);
+    // // dummy->boardViewer(connectivityMaskDiago[SQ_C2][1], boardx);
+    // // dummy->boardViewer(connectivityMaskDiago[SQ_C2][2], boardx);
+    // // dummy->boardViewer(connectivityMaskDiago[SQ_C2][3], boardx);
+    // std::cout<<"\nvalid is move:\n";
+    // std::cout<<validFlip;
 
 //   const Bitboard & future_flips = actual_flips(sq, Black_occupied, White_occupied);
 //     bool validFlip = future_flips ^ 0 ? true : false; // means got possible flips
