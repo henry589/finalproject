@@ -14,7 +14,7 @@ class mcts{
     bool isTerminal(vnode * node);
     vnode * createValidChildren(vnode * node,  int &child_count);
     void boardViewer(const bitboard::Bitboard & boardB, const bitboard::Bitboard & boardW);
-    uint64_t placeMove(u_int64_t & board, int  bit_pos);
+    uint64_t placeMove(uint64_t & board, int  bit_pos);
 };
 
 #endif

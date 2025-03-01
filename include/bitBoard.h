@@ -4,7 +4,7 @@
 #include <cassert>
 #include <random>
 #include <iostream>
-
+#include <immintrin.h>
 namespace bitboard{
 
 enum Square : int {
@@ -44,8 +44,41 @@ enum File : int {
     FILE_H,
     FILE_NB
 };
+enum Direction : int {
+    NORTH = 8,
+    EAST = 1,
+    SOUTH = -NORTH,
+    WEST = -EAST,
 
+    NORTH_EAST = NORTH + EAST,
+    SOUTH_EAST = SOUTH + EAST,
+    SOUTH_WEST = SOUTH + WEST,
+    NORTH_WEST = NORTH + WEST
+};
 using Bitboard = uint64_t;
+
+constexpr bool is_ok(Square s) { return s >= SQ_A1 && s <= SQ_H8; }
+
+constexpr Bitboard square_bb(Square s) {
+    assert(is_ok(s));
+    return (1ULL << s);
+}
+inline Bitboard  operator&(Bitboard b, Square s) { return b & square_bb(s); }
+inline Bitboard  operator|(Bitboard b, Square s) { return b | square_bb(s); }
+inline Bitboard  operator^(Bitboard b, Square s) { return b ^ square_bb(s); }
+inline Bitboard& operator|=(Bitboard& b, Square s) { return b |= square_bb(s); }
+inline Bitboard& operator^=(Bitboard& b, Square s) { return b ^= square_bb(s); }
+
+//inline Bitboard operator&(Square s, Bitboard b) { return b & s; }
+inline Bitboard operator|(Square s, Bitboard b) { return b | s; }
+inline Bitboard operator^(Square s, Bitboard b) { return b ^ s; }
+inline Bitboard operator|(Square s1, Square s2) { return square_bb(s1) | s2; }
+
+
+constexpr Square operator+(Square s, Direction d) { return Square(int(s) + int(d)); }
+constexpr Square operator-(Square s, Direction d) { return Square(int(s) - int(d)); }
+inline Square& operator+=(Square& s, Direction d) { return s = s + d; }
+
 constexpr Bitboard Rank1BB = 0xFF;
 constexpr Bitboard Rank8BB = Rank1BB << (8 * 7);
 constexpr Bitboard FileABB = 0x0101010101010101ULL;
@@ -85,17 +118,7 @@ extern uint8_t SquareDistance[SQUARE_NB][SQUARE_NB];
 extern Magic magics[SQUARE_NB][2];
 extern Bitboard connectivityMaskOrtho[SQUARE_NB][4];
 extern Bitboard connectivityMaskDiago[SQUARE_NB][4];
-enum Direction : int {
-    NORTH = 8,
-    EAST  = 1,
-    SOUTH = -NORTH,
-    WEST  = -EAST,
 
-    NORTH_EAST = NORTH + EAST,
-    SOUTH_EAST = SOUTH + EAST,
-    SOUTH_WEST = SOUTH + WEST,
-    NORTH_WEST = NORTH + WEST
-};
 enum DirectionType {
     DIAGO, 
     ORTHO
@@ -107,27 +130,7 @@ enum Side : bool{
 };
 
 
-constexpr bool is_ok(Square s) { return s >= SQ_A1 && s <= SQ_H8; }
 
-constexpr Bitboard square_bb(Square s) {
-    assert(is_ok(s));
-    return (1ULL << s);
-}
-inline Bitboard  operator&(Bitboard b, Square s) { return b & square_bb(s); }
-inline Bitboard  operator|(Bitboard b, Square s) { return b | square_bb(s); }
-inline Bitboard  operator^(Bitboard b, Square s) { return b ^ square_bb(s); }
-inline Bitboard& operator|=(Bitboard& b, Square s) { return b |= square_bb(s); }
-inline Bitboard& operator^=(Bitboard& b, Square s) { return b ^= square_bb(s); }
-
-inline Bitboard operator&(Square s, Bitboard b) { return b & s; }
-inline Bitboard operator|(Square s, Bitboard b) { return b | s; }
-inline Bitboard operator^(Square s, Bitboard b) { return b ^ s; }
-inline Bitboard operator|(Square s1, Square s2) { return square_bb(s1) | s2; }
-
-
-constexpr Square operator+(Square s, Direction d) { return Square(int(s) + int(d)); }
-constexpr Square operator-(Square s, Direction d) { return Square(int(s) - int(d)); }
-inline Square&   operator+=(Square& s, Direction d) { return s = s + d; }
 
 template<typename T1 = Square>
 inline int distance(Square x, Square y);
@@ -226,7 +229,7 @@ class PRNG {
 };
 inline int popcount(Bitboard b) {
   
-    return __builtin_popcountll(b);
+    return int(_mm_popcnt_u64(b));
     
 }
 

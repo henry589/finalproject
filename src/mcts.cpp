@@ -119,7 +119,7 @@ bool mcts::isTerminal(vnode *node)
 
 uint64_t mcts::placeMove(Bitboard &board, int bit_pos)
 {
-    return board | (1 << bit_pos);
+    return board | (1ULL << bit_pos);
 }
 
 void mcts::boardViewer(const bitboard::Bitboard & boardB, const bitboard::Bitboard & boardW)

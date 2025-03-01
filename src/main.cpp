@@ -30,7 +30,7 @@ void test()
     // this is a routine to simulate addition of sibling to the children head
     for(int i =1; i <6; ++i)
     {
-        parent_node->append_child(i, i, s, 0);
+        parent_node->append_child(i, i, bool(s), 0);
 
     }
     std::cout<<"done:"<<std::endl;
@@ -122,22 +122,22 @@ void test()
 
     mcts * mc = new mcts();
     mc->selection(selected_node);
-    // int childCount = 0;
-    // vnode * test_node = new vnode();
-    // // test_node->boardB = 0x4a000a200080060;
-    // // test_node->boardW = 0x8101c30002000;
-    //     test_node->boardW = 0x81402400d0492a44;
-    // test_node->boardB = 0x4200000821940028;
-    // test_node->turn = BLACK;
-    // vnode * children = mc->createValidChildren(test_node, childCount);
-    // std::cout<<"\nchild count:"<<childCount;
-    // vnode * tmpChildren = children;
-    // while(tmpChildren != nullptr)
-    // {
-    //     std::cout<<"\nmove:"<<tmpChildren->action_taken;
-    //     mc->boardViewer(tmpChildren->boardB, tmpChildren->boardW);
-    //     tmpChildren = tmpChildren->get_next_sibling();
-    // }
+     int childCount = 0;
+     vnode * test_node = new vnode();
+     // test_node->boardB = 0x4a000a200080060;
+     // test_node->boardW = 0x8101c30002000;
+         test_node->boardW = 0x81402400d0492a44;
+     test_node->boardB = 0x4200000821940028;
+     test_node->turn = BLACK;
+     vnode * children = mc->createValidChildren(test_node, childCount);
+     std::cout<<"\nchild count:"<<childCount;
+     vnode * tmpChildren = children;
+     while(tmpChildren != nullptr)
+     {
+         std::cout<<"\nmove:"<<tmpChildren->action_taken;
+         mc->boardViewer(tmpChildren->boardB, tmpChildren->boardW);
+         tmpChildren = tmpChildren->get_next_sibling();
+     }
     // uint64_t boardB = 0x89240a904394248a;
     // uint64_t boardW = 0x2218012d20008014;
     // mc->boardViewer(boardB, boardW);
@@ -171,68 +171,68 @@ void singleThreadTest() {
     std::cout << "Single-threaded test passed.\n";
 }
 
-void multiThreadTest() {
-    std::cout << "Running multi-threaded test...\n";
+//void multiThreadTest() {
+//    std::cout << "Running multi-threaded test...\n";
+//
+//    MemoryPool pool(64, 20); // Create a memory pool with block size 64 bytes and chunk size 20 blocks
+//
+//    const int numThreads = 4;
+//    const int numAllocationsPerThread = 100;
+//
+//    auto allocateAndDeallocate = [&pool]() {
+//        std::vector<void*> blocks;
+//
+//        // Allocate multiple blocks
+//        for (int i = 0; i < numAllocationsPerThread; ++i) {
+//            blocks.push_back(pool.allocate());
+//        }
+//
+//        // Deallocate them
+//        for (void* block : blocks) {
+//            pool.deallocate(block);
+//        }
+//    };
+//
+//    // Create and run multiple threads
+//    std::vector<std::thread> threads;
+//    for (int i = 0; i < numThreads; ++i) {
+//        threads.emplace_back(allocateAndDeallocate);
+//    }
+//
+//    for (auto& t : threads) {
+//        t.join(); // Wait for all threads to finish
+//    }
+//
+//    std::cout << "Multi-threaded test passed.\n";
+//}
 
-    MemoryPool pool(64, 20); // Create a memory pool with block size 64 bytes and chunk size 20 blocks
-
-    const int numThreads = 4;
-    const int numAllocationsPerThread = 100;
-
-    auto allocateAndDeallocate = [&pool]() {
-        std::vector<void*> blocks;
-
-        // Allocate multiple blocks
-        for (int i = 0; i < numAllocationsPerThread; ++i) {
-            blocks.push_back(pool.allocate());
-        }
-
-        // Deallocate them
-        for (void* block : blocks) {
-            pool.deallocate(block);
-        }
-    };
-
-    // Create and run multiple threads
-    std::vector<std::thread> threads;
-    for (int i = 0; i < numThreads; ++i) {
-        threads.emplace_back(allocateAndDeallocate);
-    }
-
-    for (auto& t : threads) {
-        t.join(); // Wait for all threads to finish
-    }
-
-    std::cout << "Multi-threaded test passed.\n";
-}
-
-void stressTest() {
-    std::cout << "Running stress test...\n";
-
-    MemoryPool pool(128, 50); // Create a memory pool with block size 128 bytes and chunk size 50 blocks
-
-    const int numThreads = 8;
-    const int numAllocationsPerThread = 1000;
-
-    auto allocateAndDeallocate = [&pool]() {
-        for (int i = 0; i < numAllocationsPerThread; ++i) {
-            void* block = pool.allocate();
-            pool.deallocate(block); // Allocate and immediately deallocate
-        }
-    };
-
-    // Create and run multiple threads
-    std::vector<std::thread> threads;
-    for (int i = 0; i < numThreads; ++i) {
-        threads.emplace_back(allocateAndDeallocate);
-    }
-
-    for (auto& t : threads) {
-        t.join(); // Wait for all threads to finish
-    }
-
-    std::cout << "Stress test passed.\n";
-}
+//void stressTest() {
+//    std::cout << "Running stress test...\n";
+//
+//    MemoryPool pool(128, 50); // Create a memory pool with block size 128 bytes and chunk size 50 blocks
+//
+//    const int numThreads = 8;
+//    const int numAllocationsPerThread = 1000;
+//
+//    auto allocateAndDeallocate = [&pool]() {
+//        for (int i = 0; i < numAllocationsPerThread; ++i) {
+//            void* block = pool.allocate();
+//            pool.deallocate(block); // Allocate and immediately deallocate
+//        }
+//    };
+//
+//    // Create and run multiple threads
+//    std::vector<std::thread> threads;
+//    for (int i = 0; i < numThreads; ++i) {
+//        threads.emplace_back(allocateAndDeallocate);
+//    }
+//
+//    for (auto& t : threads) {
+//        t.join(); // Wait for all threads to finish
+//    }
+//
+//    std::cout << "Stress test passed.\n";
+//}
 
 void valueVerificationTest() {
     std::cout << "Running value verification test...\n";
@@ -296,8 +296,8 @@ int main() {
     init_Bitboards();
 
     test();
-    test_uct_formula();
-
+    //test_uct_formula();
+    std::cout << "hello";
     // std::cout<<"\nindexed:"<<magics[SQ_F5][ORTHO - DIAGO].rays_bb(0x2000008400000020);
         
     
