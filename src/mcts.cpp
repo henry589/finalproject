@@ -4,6 +4,7 @@
 #include "../include/bitBoard.h"
 
 using namespace bitboard;
+
 //select the nodes to form a path down the tree
 vnode* mcts::selection(vnode* const root)
 {
@@ -84,8 +85,8 @@ vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 		int nonce = valid_child_count > 0 ? getRandomNumber(0, valid_child_count - 1) : -1;
 		int count = 0;
 
-		// if we unable to expand, might not be terminal yet
-		// so we retry by switching the turn, this is a hard re-set of the turn
+		// if we unable to expand, might not be terminal yet so we retry by switching the turn, this
+		// is a hard re-set of the turn
 		if (tmp_node == nullptr)
 		{
 			lfnode->turn = !lfnode->turn;
@@ -132,11 +133,78 @@ vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 	return nullptr;
 }
 
-void mcts::simulation(vnode * exp_node)
+void mcts::simulation(vnode* exp_node)
 {
-	// if exp_node is null means it is a terminal node, directly skip simulation because no any simulations could be done here
+	// if exp_node is null means it is a terminal node, directly skip simulation because no any
+	// simulations could be done here
 	if (exp_node != nullptr)
 	{
+		//play the game here with random move
+		//determine valid moves and play
+		//still we also need to check every possible square
+		//initial area
+		Bitboard current_player = 0;
+		Bitboard opponent = 0;
+		Bitboard overlapped_board = 0;
+		Bitboard track_boardB = exp_node->boardB;
+		Bitboard track_boardW = exp_node->boardW;
+		bool current_turn = exp_node->turn;
+		const int terminate_Criterion = 2;
+		int terminal_count = 0;
+		// first assume simulation running forever
+		while (true)
+		{
+			bool chosen_once = false;
+			current_player = current_turn == BLACK ? track_boardB : track_boardW;
+			opponent = current_turn == WHITE ? track_boardB : track_boardW;
+			overlapped_board = track_boardB | track_boardW;
+			Bitboard mod_cur_boardB = 0;
+			Bitboard mod_cur_boardW = 0;
+			// this is each iteration of simulation
+			for (Square sq = SQ_A1; sq <= SQ_H8; ++sq)
+			{
+				// check if not empty empty
+				if (overlapped_board & (1ULL << sq))
+				{
+					continue;
+				}
+				else { // square is empty
+					Bitboard future_flips = actual_flips(sq, current_player, opponent);
+
+					// if this square contain valid move
+					if (future_flips ^ 0)
+					{
+						// we let it do at least once, the rest whether to update the selection
+						// depends on probability
+						if (chosen_once == false || random_bool(0.5))
+						{
+							mod_cur_boardB = current_turn == BLACK ? future_flips | track_boardB | (1ULL << sq) : ~future_flips & track_boardB;
+							mod_cur_boardW = current_turn == WHITE ? future_flips | track_boardW | (1ULL << sq) : ~future_flips & track_boardW;
+
+							chosen_once = true;
+							terminal_count = 0; // reset termination count
+						}
+					}
+				}
+			}
+			//make move and board flipped in track_board
+			track_boardB = mod_cur_boardB;
+			track_boardW = mod_cur_boardW;
+			boardViewer(track_boardB, track_boardW);
+
+			//increase the terminal count when no child was found
+			if (chosen_once == false) ++terminal_count;
+
+			// when both(x2) sides do not have any valid moves to go, means a terminal state achieved
+			if (terminal_count >= 2)
+				break;
+
+			//update the current player and opponent here when moving to the next move
+			current_turn = !current_turn;
+		}
+
+		// after breaking from the above termination, we try to check the current state's winner
+		boardViewer(track_boardB, track_boardW);
 
 	}
 }
@@ -150,10 +218,6 @@ bool mcts::isTerminal(vnode* node)
 	return false;
 }
 
-//uint64_t mcts::placeMove(Bitboard& board, int bit_pos)
-//{
-//	return board | (1ULL << bit_pos);
-//}
 
 void mcts::boardViewer(const bitboard::Bitboard& boardB, const bitboard::Bitboard& boardW)
 {
@@ -182,19 +246,17 @@ void mcts::boardViewer(const bitboard::Bitboard& boardB, const bitboard::Bitboar
 	std::cout << "\nend board\n";
 }
 
-//  create valid full children by checking every square whether it is valid or not
+// create valid full children by checking every square whether it is valid or not
 vnode* mcts::createValidChildren(vnode* node, int& child_count)
 {
-	// take current node and then check for all possible nodes
-	// this will follow the othello rule
+	// take current node and then check for all possible nodes this will follow the othello rule
 	Bitboard  cur_boardB = node->boardB;
 	Bitboard  cur_boardW = node->boardW;
 	Bitboard  cur_side = node->turn == BLACK ? cur_boardB : cur_boardW;
 	Bitboard  alt_side = node->turn == WHITE ? cur_boardB : cur_boardW;
 	Bitboard  overlapped_board = cur_boardB | cur_boardW;
 
-	// assume the square sq is empty
-	// we have to know whether it is empty square first
+	// assume the square sq is empty we have to know whether it is empty square first
 	for (Square sq = SQ_A1; sq <= SQ_H8; ++sq)
 	{
 		// check if not empty empty
@@ -220,11 +282,10 @@ vnode* mcts::createValidChildren(vnode* node, int& child_count)
 	return node->get_children();
 }
 
-//  create valid one child only by checking square whether it is valid or not with entropy selection
+// create valid one child only by checking square whether it is valid or not with entropy selection
 vnode* mcts::createValidChild(vnode* node, int& child_count)
 {
-	// take current node and then check for all possible nodes
-	// this will follow the othello rule
+	// take current node and then check for all possible nodes this will follow the othello rule
 	Bitboard  cur_boardB = node->boardB;
 	Bitboard  cur_boardW = node->boardW;
 	Bitboard  cur_side = node->turn == BLACK ? cur_boardB : cur_boardW;
@@ -232,8 +293,7 @@ vnode* mcts::createValidChild(vnode* node, int& child_count)
 	Bitboard  overlapped_board = cur_boardB | cur_boardW;
 
 	std::vector<Square> potentialSquare;
-	// assume the square sq is empty
-	// we have to know whether it is empty square first
+	// assume the square sq is empty we have to know whether it is empty square first
 	for (Square sq = SQ_A1; sq <= SQ_H8; ++sq)
 	{
 		// check if not empty empty
@@ -271,7 +331,8 @@ vnode* mcts::createValidChild(vnode* node, int& child_count)
 }
 
 bool mcts::haveValidChild(vnode* node)
-{		// take current node and then check for all possible nodes
+{		
+	// take current node and then check for all possible nodes
 	// this will follow the othello rule
 	Bitboard  cur_boardB = node->boardB;
 	Bitboard  cur_boardW = node->boardW;
@@ -279,8 +340,7 @@ bool mcts::haveValidChild(vnode* node)
 	Bitboard  alt_side = node->turn == WHITE ? cur_boardB : cur_boardW;
 	Bitboard  overlapped_board = cur_boardB | cur_boardW;
 
-	// assume the square sq is empty
-	// we have to know whether it is empty square first
+	// assume the square sq is empty we have to know whether it is empty square first
 	for (Square sq = SQ_A1; sq <= SQ_H8; ++sq)
 	{
 		// check if not empty empty

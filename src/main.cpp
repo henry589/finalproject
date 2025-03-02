@@ -124,16 +124,19 @@ void test()
 	//test_node->boardB = 0x4200000821940028;
 	test_node->boardW = 0x1008000000;
 	test_node->boardB = 0x810000000;
-	test_node->turn = BLACK;
-	//vnode* children = mc->createValidChildren(test_node, childCount);
-	//std::cout << "\nchild count:" << childCount;
-	//vnode* tmpChildren = children;
-	//while (tmpChildren != nullptr)
-	//{
-	//	std::cout << "\nmove:" << tmpChildren->action_taken;
-	//	mc->boardViewer(tmpChildren->boardB, tmpChildren->boardW);
-	//	tmpChildren = tmpChildren->get_next_sibling();
-	//}
+
+	//test_node->boardW = 0xf3f3f3f3f3f3f3f3;
+	//test_node->boardB = 0xc0c0c0c0c0c0c0c;
+	/*test_node->turn = BLACK;
+	vnode* children = mc->createValidChildren(test_node, childCount);
+	std::cout << "\nchild count:" << childCount;
+	vnode* tmpChildren = children;
+	while (tmpChildren != nullptr)
+	{
+		std::cout << "\nmove:" << tmpChildren->action_taken;
+		mc->boardViewer(tmpChildren->boardB, tmpChildren->boardW);
+		tmpChildren = tmpChildren->get_next_sibling();
+	}*/
 
 	vnode* result = mc->expansion(test_node, mcts::exp_mode::EXPANSION_SINGLE);
 	vnode::BFS(test_node, vnode::OpType::TRAVERSE, false);
@@ -143,10 +146,8 @@ void test()
 	// uint64_t boardW = 0x2218012d20008014;
 	if(result != nullptr)
 		mc->boardViewer(result->boardB, result->boardW);
-	// std::cout << "\n\nplaced board:\n";
 
-	// uint64_t movePlaced = mc->placeMove(boardB, 5);
-	// mc->boardViewer(movePlaced, boardW);
+	mc->simulation(test_node);
 	for (int m = 0; m < 5; m++)
 	{
 		std::cout << "\nrandom number:" << getRandomNumber(0, 5);

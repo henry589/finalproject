@@ -176,14 +176,14 @@ namespace bitboard {
 	}
 
 	// this is the actual flips
-	Bitboard actual_flips(const Square& sq, const Bitboard& Black_occupied, const Bitboard& White_occupied) {
+	Bitboard actual_flips(const Square& sq, const Bitboard& Player_occupied, const Bitboard& Opponent_occupied) {
 		Bitboard flipped(0);
 
-		Bitboard ortho_rays = magics[sq][ORTHO - DIAGO].rays_bb(Black_occupied);
-		Bitboard ortho_rayBlockers = Black_occupied & ortho_rays;
+		Bitboard ortho_rays = magics[sq][ORTHO - DIAGO].rays_bb(Player_occupied);
+		Bitboard ortho_rayBlockers = Player_occupied & ortho_rays;
 
-		Bitboard diago_rays = magics[sq][DIAGO - DIAGO].rays_bb(Black_occupied);
-		Bitboard diago_rayBlockers = Black_occupied & diago_rays;
+		Bitboard diago_rays = magics[sq][DIAGO - DIAGO].rays_bb(Player_occupied);
+		Bitboard diago_rayBlockers = Player_occupied & diago_rays;
 		Bitboard dummy = 0;
 
 		for (int d = 0; d < 4; ++d)
@@ -194,7 +194,7 @@ namespace bitboard {
 			Bitboard flip(0);
 			if (rb ^ 0) {
 				Bitboard oRay = ortho_rays & cMask;
-				Bitboard oOcc = White_occupied & cMask;
+				Bitboard oOcc = Opponent_occupied & cMask;
 				Bitboard comb = (oOcc & oRay) | rb;
 				if (oRay == comb)
 					flip = oOcc & oRay;
@@ -209,7 +209,7 @@ namespace bitboard {
 			Bitboard flip(0);
 			if (rb ^ 0) {
 				Bitboard oRay = diago_rays & cMask;
-				Bitboard oOcc = White_occupied & cMask;
+				Bitboard oOcc = Opponent_occupied & cMask;
 				Bitboard comb = (oOcc & oRay) | rb;
 				if (oRay == comb)
 					flip = oOcc & oRay;

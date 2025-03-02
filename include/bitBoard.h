@@ -149,7 +149,7 @@ inline T& operator--(T& d) { return d = T(int(d) - 1); }
 	void init_Bitboards();
 	void buildConnectivityMask();
 	void boardViewer(const Bitboard& boardB, const Bitboard& boardW);
-	Bitboard actual_flips(const Square& sq, const Bitboard& Black_occupied, const Bitboard& White_occupied);
+	Bitboard actual_flips(const Square& sq, const Bitboard& Player_occupied, const Bitboard& Opponent_occupied);
 	Bitboard expected_flips(DirectionType dr, Square sq, Bitboard occupied, bool singleDirection = false, int direction_selected = 0);
 
 	// Bitboard braceMask[SQUARE_NB];
