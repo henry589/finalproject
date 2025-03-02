@@ -121,7 +121,7 @@ void test()
 	// test_node->boardB = 0x4a000a200080060;
 	// test_node->boardW = 0x8101c30002000;
 	//test_node->boardW = 0x81402400d0492a44;
-	//test_node->boardB = 0x4200000821940028;	
+	//test_node->boardB = 0x4200000821940028;
 	test_node->boardW = 0x1008000000;
 	test_node->boardB = 0x810000000;
 	test_node->turn = BLACK;
@@ -135,13 +135,13 @@ void test()
 	//	tmpChildren = tmpChildren->get_next_sibling();
 	//}
 
-	vnode* result = mc->expansion(test_node);
+	vnode* result = mc->expansion(test_node, mcts::exp_mode::EXPANSION_FULL);
 	vnode::BFS(test_node, vnode::OpType::TRAVERSE, false);
 	std::string x2 = vnode::get_dot_formatted();
 	std::cout << "\nsearch:" << x2;
 	// uint64_t boardB = 0x89240a904394248a;
 	// uint64_t boardW = 0x2218012d20008014;
-	 mc->boardViewer(result->boardB, result->boardW);
+	mc->boardViewer(result->boardB, result->boardW);
 	// std::cout << "\n\nplaced board:\n";
 
 	// uint64_t movePlaced = mc->placeMove(boardB, 5);

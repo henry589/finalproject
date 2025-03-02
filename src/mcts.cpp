@@ -73,53 +73,38 @@ vnode* mcts::selection(vnode* const root)
 	return nullptr;
 }
 
-vnode* mcts::expansion(vnode* lfnode)
+// expand the current node and return the randomly selected node for simulation
+vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 {
-	
-	//create valid children from current lfnode
-	int valid_child_count = 0;
-	vnode* children = createValidChildren(lfnode, valid_child_count);
-	vnode* tmp_node = children;
-	const int & nonce = getRandomNumber(0, valid_child_count - 1);
-	int count = 0;
-
-	// if there's some valid children
-	while (tmp_node != nullptr)
+	if (exp_mode == EXPANSION_FULL)
 	{
-		// return the random child
-		if (nonce == count)
+		//create valid children from current lfnode
+		int valid_child_count = 0;
+		vnode* tmp_node = createValidChildren(lfnode, valid_child_count);
+		const int nonce = getRandomNumber(0, valid_child_count - 1);
+		int count = 0;
+
+		// if there's some valid children
+		while (tmp_node != nullptr)
 		{
-			return tmp_node;
+			// return the random child
+			if (nonce == count)
+			{
+				return tmp_node;
+			}
+			tmp_node = tmp_node->get_next_sibling();
+			++count;
 		}
-		tmp_node = tmp_node->get_next_sibling();
-		++count;
 	}
-	
+	else if (exp_mode == EXPANSION_SINGLE)
+	{
+		int valid_child_count = 0;
+		vnode* child = createValidChild(lfnode, valid_child_count);
+		return child;
+	}
+
 	return nullptr;
 }
-
-
-//void mcts::expansion(vnode* leaf) {
-//	// Do NOT expand a terminal node
-//	if (leaf->is_terminal()) return;
-//
-//	// Check if already expanded
-//	if (leaf->is_fully_expanded()) return;
-//
-//	// Get all legal moves
-//	std::vector<Move> legal_moves = leaf->get_legal_moves();
-//
-//	// Reserve space (optimization)
-//	leaf->children.reserve(legal_moves.size());
-//
-//	for (const Move& move : legal_moves) {
-//		vnode* new_node = new vnode(leaf, move);
-//		leaf->add_child(new_node);
-//	}
-//
-//	// Mark node as fully expanded
-//	leaf->set_fully_expanded(true);
-//}
 
 void mcts::simulation()
 {
@@ -134,10 +119,10 @@ bool mcts::isTerminal(vnode* node)
 	return false;
 }
 
-uint64_t mcts::placeMove(Bitboard& board, int bit_pos)
-{
-	return board | (1ULL << bit_pos);
-}
+//uint64_t mcts::placeMove(Bitboard& board, int bit_pos)
+//{
+//	return board | (1ULL << bit_pos);
+//}
 
 void mcts::boardViewer(const bitboard::Bitboard& boardB, const bitboard::Bitboard& boardW)
 {
@@ -166,15 +151,17 @@ void mcts::boardViewer(const bitboard::Bitboard& boardB, const bitboard::Bitboar
 	std::cout << "\nend board\n";
 }
 
+//  create valid full children by checking every square whether it is valid or not
 vnode* mcts::createValidChildren(vnode* node, int& child_count)
 {
 	// take current node and then check for all possible nodes
 	// this will follow the othello rule
-	const Bitboard& cur_boardB = node->boardB;
-	const Bitboard& cur_boardW = node->boardW;
-	const Bitboard& cur_side = node->turn == BLACK ? cur_boardB : cur_boardW;
-	const Bitboard& alt_side = node->turn == WHITE ? cur_boardB : cur_boardW;
-	const Bitboard& overlapped_board = cur_boardB | cur_boardW;
+	Bitboard  cur_boardB = node->boardB;
+	Bitboard  cur_boardW = node->boardW;
+	Bitboard  cur_side = node->turn == BLACK ? cur_boardB : cur_boardW;
+	Bitboard  alt_side = node->turn == WHITE ? cur_boardB : cur_boardW;
+	Bitboard  overlapped_board = cur_boardB | cur_boardW;
+
 	// assume the square sq is empty
 	// we have to know whether it is empty square first
 	for (Square sq = SQ_A1; sq <= SQ_H8; ++sq)
@@ -186,18 +173,100 @@ vnode* mcts::createValidChildren(vnode* node, int& child_count)
 		}
 		else { // empty
 			// actual flips are the flips that would be done by the cur_boardB only
-			const Bitboard& future_flips = actual_flips(sq, cur_side, alt_side);
+			const Bitboard future_flips = actual_flips(sq, cur_side, alt_side);
 
 			if (future_flips ^ 0) // future_flips contain something also means not equal to zero
 			{
-				const Bitboard& mod_cur_boardB = node->turn == BLACK ? future_flips | cur_boardB | (1ULL << sq) : ~future_flips & cur_boardB;
-				const Bitboard& mod_cur_boardW = node->turn == WHITE ? future_flips | cur_boardW | (1ULL << sq) : ~future_flips & cur_boardW;
+				Bitboard mod_cur_boardB = node->turn == BLACK ? future_flips | cur_boardB | (1ULL << sq) : ~future_flips & cur_boardB;
+				Bitboard mod_cur_boardW = node->turn == WHITE ? future_flips | cur_boardW | (1ULL << sq) : ~future_flips & cur_boardW;
 				node->append_child(mod_cur_boardB, mod_cur_boardW, !node->turn, sq);
 				++child_count;
 			}
 		}
 	}
 
-	// Bitboard
+	// return the valid children
 	return node->get_children();
+}
+
+//  create valid one child only by checking square whether it is valid or not with entropy selection
+vnode* mcts::createValidChild(vnode* node, int& child_count)
+{
+	// take current node and then check for all possible nodes
+	// this will follow the othello rule
+	Bitboard  cur_boardB = node->boardB;
+	Bitboard  cur_boardW = node->boardW;
+	Bitboard  cur_side = node->turn == BLACK ? cur_boardB : cur_boardW;
+	Bitboard  alt_side = node->turn == WHITE ? cur_boardB : cur_boardW;
+	Bitboard  overlapped_board = cur_boardB | cur_boardW;
+
+	std::vector<Square> potentialSquare;
+	// assume the square sq is empty
+	// we have to know whether it is empty square first
+	for (Square sq = SQ_A1; sq <= SQ_H8; ++sq)
+	{
+		// check if not empty empty
+		if (overlapped_board & (1ULL << sq))
+		{
+			continue;
+		}
+		else { // empty
+			// actual flips are the flips that would be done by the cur_boardB only
+			const Bitboard future_flips = actual_flips(sq, cur_side, alt_side);
+
+			if (future_flips ^ 0) // future_flips contain something also means not equal to zero
+			{
+				potentialSquare.push_back(sq);
+				++child_count;
+			}
+		}
+	}
+
+	if (!potentialSquare.empty())
+	{
+		std::size_t idx = fast_rand() % potentialSquare.size();
+		Square sq_selected = potentialSquare[idx];
+
+		const Bitboard future_flips = actual_flips(sq_selected, cur_side, alt_side);
+		Bitboard mod_cur_boardB = node->turn == BLACK ? future_flips | cur_boardB | (1ULL << sq_selected) : ~future_flips & cur_boardB;
+		Bitboard mod_cur_boardW = node->turn == WHITE ? future_flips | cur_boardW | (1ULL << sq_selected) : ~future_flips & cur_boardW;
+		node->append_child(mod_cur_boardB, mod_cur_boardW, !node->turn, sq_selected);
+	}
+
+	return node->get_children();
+
+	// return nullptr means no valid child exist
+	return nullptr;
+}
+
+bool mcts::haveValidChild(vnode* node)
+{		// take current node and then check for all possible nodes
+	// this will follow the othello rule
+	Bitboard  cur_boardB = node->boardB;
+	Bitboard  cur_boardW = node->boardW;
+	Bitboard  cur_side = node->turn == BLACK ? cur_boardB : cur_boardW;
+	Bitboard  alt_side = node->turn == WHITE ? cur_boardB : cur_boardW;
+	Bitboard  overlapped_board = cur_boardB | cur_boardW;
+
+	// assume the square sq is empty
+	// we have to know whether it is empty square first
+	for (Square sq = SQ_A1; sq <= SQ_H8; ++sq)
+	{
+		// check if not empty empty
+		if (overlapped_board & (1ULL << sq))
+		{
+			continue;
+		}
+		else { // empty
+			// actual flips are the flips that would be done by the cur_boardB only
+			const Bitboard future_flips = actual_flips(sq, cur_side, alt_side);
+
+			if (future_flips ^ 0) // future_flips contain something also means not equal to zero
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
 }

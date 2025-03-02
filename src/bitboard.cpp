@@ -188,14 +188,14 @@ namespace bitboard {
 
 		for (int d = 0; d < 4; ++d)
 		{
-			const Bitboard& cMask = connectivityMaskOrtho[sq][d];
-			const Bitboard& rb = ortho_rayBlockers & cMask;
+			Bitboard cMask = connectivityMaskOrtho[sq][d];
+			Bitboard rb = ortho_rayBlockers & cMask;
 
 			Bitboard flip(0);
 			if (rb ^ 0) {
-				const Bitboard& oRay = ortho_rays & cMask;
-				const Bitboard& oOcc = White_occupied & cMask;
-				const Bitboard& comb = (oOcc & oRay) | rb;
+				Bitboard oRay = ortho_rays & cMask;
+				Bitboard oOcc = White_occupied & cMask;
+				Bitboard comb = (oOcc & oRay) | rb;
 				if (oRay == comb)
 					flip = oOcc & oRay;
 			}
@@ -203,14 +203,14 @@ namespace bitboard {
 		}
 		for (int d = 0; d < 4; ++d)
 		{
-			const Bitboard& cMask = connectivityMaskDiago[sq][d];
-			const Bitboard& rb = diago_rayBlockers & cMask;
+			Bitboard cMask = connectivityMaskDiago[sq][d];
+			Bitboard rb = diago_rayBlockers & cMask;
 
 			Bitboard flip(0);
 			if (rb ^ 0) {
-				const Bitboard& oRay = diago_rays & cMask;
-				const Bitboard& oOcc = White_occupied & cMask;
-				const Bitboard& comb = (oOcc & oRay) | rb;
+				Bitboard oRay = diago_rays & cMask;
+				Bitboard oOcc = White_occupied & cMask;
+				Bitboard comb = (oOcc & oRay) | rb;
 				if (oRay == comb)
 					flip = oOcc & oRay;
 			}

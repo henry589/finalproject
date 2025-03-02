@@ -6,15 +6,19 @@
 
 class mcts {
 public:
-	vnode* currentTree;
+	enum exp_mode : int {
+		EXPANSION_FULL,
+		EXPANSION_SINGLE
+	};
 	vnode* selection(vnode* root);
-	vnode* expansion(vnode* lfnode);
+	vnode* expansion(vnode* lfnode, const exp_mode& exp_mode = EXPANSION_FULL);
 	void simulation();
 	void backup();
 	bool isTerminal(vnode* node);
-	vnode* createValidChildren(vnode* node, int& child_count);
 	void boardViewer(const bitboard::Bitboard& boardB, const bitboard::Bitboard& boardW);
-	uint64_t placeMove(uint64_t& board, int  bit_pos);
+	vnode* createValidChildren(vnode* node, int& child_count);
+	vnode* createValidChild(vnode* node, int& child_count);
+	bool haveValidChild(vnode* node);
 };
 
 #endif

@@ -14,7 +14,4 @@ int fast_rand();
 // Creates a high-entropy seed sequence for the random number generator
 std::mt19937 createGenerator();
 
-    
-
-
 #endif
