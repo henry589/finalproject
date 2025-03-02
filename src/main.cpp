@@ -135,13 +135,14 @@ void test()
 	//	tmpChildren = tmpChildren->get_next_sibling();
 	//}
 
-	vnode* result = mc->expansion(test_node, mcts::exp_mode::EXPANSION_FULL);
+	vnode* result = mc->expansion(test_node, mcts::exp_mode::EXPANSION_SINGLE);
 	vnode::BFS(test_node, vnode::OpType::TRAVERSE, false);
 	std::string x2 = vnode::get_dot_formatted();
 	std::cout << "\nsearch:" << x2;
 	// uint64_t boardB = 0x89240a904394248a;
 	// uint64_t boardW = 0x2218012d20008014;
-	mc->boardViewer(result->boardB, result->boardW);
+	if(result != nullptr)
+		mc->boardViewer(result->boardB, result->boardW);
 	// std::cout << "\n\nplaced board:\n";
 
 	// uint64_t movePlaced = mc->placeMove(boardB, 5);

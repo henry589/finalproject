@@ -81,8 +81,26 @@ vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 		//create valid children from current lfnode
 		int valid_child_count = 0;
 		vnode* tmp_node = createValidChildren(lfnode, valid_child_count);
-		const int nonce = getRandomNumber(0, valid_child_count - 1);
+		int nonce = valid_child_count > 0 ? getRandomNumber(0, valid_child_count - 1) : -1;
 		int count = 0;
+
+		// if we unable to expand, might not be terminal yet
+		// so we retry by switching the turn, this is a hard re-set of the turn
+		if (tmp_node == nullptr)
+		{
+			lfnode->turn = !lfnode->turn;
+			vnode* switch_player_node = createValidChildren(lfnode, valid_child_count);
+			nonce = valid_child_count > 0 ? getRandomNumber(0, valid_child_count - 1) : -1;
+			// if switched player also fail means this is most probably a terminal state
+			if (switch_player_node == nullptr)
+			{
+				return nullptr;
+			}
+			else {
+				// revive the expansion process
+				tmp_node = switch_player_node;
+			}
+		}
 
 		// if there's some valid children
 		while (tmp_node != nullptr)
@@ -100,14 +118,27 @@ vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 	{
 		int valid_child_count = 0;
 		vnode* child = createValidChild(lfnode, valid_child_count);
+		// if we unable to expand, might not be terminal yet so we retry by switching the turn, this
+		// is a hard re-set of the turn
+		if (child == nullptr)
+		{
+			lfnode->turn = !lfnode->turn;
+			// return the switched player child
+			return createValidChild(lfnode, valid_child_count);
+		}
 		return child;
 	}
 
 	return nullptr;
 }
 
-void mcts::simulation()
+void mcts::simulation(vnode * exp_node)
 {
+	// if exp_node is null means it is a terminal node, directly skip simulation because no any simulations could be done here
+	if (exp_node != nullptr)
+	{
+
+	}
 }
 
 void mcts::backup()

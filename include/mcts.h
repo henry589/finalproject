@@ -12,7 +12,7 @@ public:
 	};
 	vnode* selection(vnode* root);
 	vnode* expansion(vnode* lfnode, const exp_mode& exp_mode = EXPANSION_FULL);
-	void simulation();
+	void simulation(vnode* exp_node);
 	void backup();
 	bool isTerminal(vnode* node);
 	void boardViewer(const bitboard::Bitboard& boardB, const bitboard::Bitboard& boardW);
