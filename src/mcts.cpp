@@ -151,6 +151,8 @@ void mcts::simulation(vnode* exp_node)
 		bool current_turn = exp_node->turn;
 		const int terminate_Criterion = 2;
 		int terminal_count = 0;
+		Bitboard mod_cur_boardB = 0;
+		Bitboard mod_cur_boardW = 0;
 		// first assume simulation running forever
 		while (true)
 		{
@@ -158,8 +160,7 @@ void mcts::simulation(vnode* exp_node)
 			current_player = current_turn == BLACK ? track_boardB : track_boardW;
 			opponent = current_turn == WHITE ? track_boardB : track_boardW;
 			overlapped_board = track_boardB | track_boardW;
-			Bitboard mod_cur_boardB = 0;
-			Bitboard mod_cur_boardW = 0;
+
 			// this is each iteration of simulation
 			for (Square sq = SQ_A1; sq <= SQ_H8; ++sq)
 			{

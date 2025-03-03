@@ -153,6 +153,11 @@ void test()
 		std::cout << "\nrandom number:" << getRandomNumber(0, 5);
 		//std::cout << ",random number no bound:" << fast_rand();
 	}
+
+	//for (int m = 0; m <= 100; ++m)
+	//{
+	//	std::cout <<std::endl<< rand()%2;
+	//}
 }
 
 void singleThreadTest() {

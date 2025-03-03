@@ -42,6 +42,15 @@ bool random_bool(double p)
 	return (r <= cutoff);
 }
 
+//// Function to generate a random boolean with a given probability of being true
+//bool random_bool(double probability) {
+//	static std::random_device rd; // Non-deterministic seed source
+//	static std::mt19937 generator(rd()); // Mersenne Twister engine
+//	std::uniform_real_distribution<double> distribution(0.0, 1.0); // Uniform distribution [0.0, 1.0)
+//
+//	return distribution(generator) < probability; // Return true if random value < probability
+//}
+
 // ------------------------------------------------
 // fast_rand() replacement for rand()
 // Returns value in [0, RAND_MAX]
