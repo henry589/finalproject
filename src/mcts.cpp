@@ -153,14 +153,18 @@ void mcts::simulation(vnode* exp_node)
 		int terminal_count = 0;
 		Bitboard mod_cur_boardB = 0;
 		Bitboard mod_cur_boardW = 0;
+		Bitboard mod_cur_boardB_list[33] = { 0 };
+		Bitboard mod_cur_boardW_list[33] = { 0 };
 		// first assume simulation running forever
 		while (true)
 		{
-			bool chosen_once = false;
+			//bool chosen_once = false;
 			current_player = current_turn == BLACK ? track_boardB : track_boardW;
 			opponent = current_turn == WHITE ? track_boardB : track_boardW;
 			overlapped_board = track_boardB | track_boardW;
 
+
+			int possible_moves = 0;
 			// this is each iteration of simulation
 			for (Square sq = SQ_A1; sq <= SQ_H8; ++sq)
 			{
@@ -177,35 +181,51 @@ void mcts::simulation(vnode* exp_node)
 					{
 						// we let it do at least once, the rest whether to update the selection
 						// depends on probability
-						if (chosen_once == false || random_bool(0.5))
+						//if (chosen_once == false || random_bool(0.5))
 						{
-							mod_cur_boardB = current_turn == BLACK ? future_flips | track_boardB | (1ULL << sq) : ~future_flips & track_boardB;
-							mod_cur_boardW = current_turn == WHITE ? future_flips | track_boardW | (1ULL << sq) : ~future_flips & track_boardW;
-
-							chosen_once = true;
+							mod_cur_boardB_list[possible_moves] = current_turn == BLACK ? future_flips | track_boardB | (1ULL << sq) : ~future_flips & track_boardB;
+							mod_cur_boardW_list[possible_moves] = current_turn == WHITE ? future_flips | track_boardW | (1ULL << sq) : ~future_flips & track_boardW;
+							++possible_moves;
+							//chosen_once = true;
 							terminal_count = 0; // reset termination count
 						}
 					}
 				}
 			}
 			//make move and board flipped in track_board
-			track_boardB = mod_cur_boardB;
-			track_boardW = mod_cur_boardW;
-			boardViewer(track_boardB, track_boardW);
+			if (possible_moves > 0)
+			{
+				const int random = fast_rand();
 
-			//increase the terminal count when no child was found
-			if (chosen_once == false) ++terminal_count;
+				track_boardB = mod_cur_boardB_list[random % possible_moves];
+				track_boardW = mod_cur_boardW_list[random % possible_moves];
+				boardViewer(track_boardB, track_boardW);
+
+			}
+			else
+			{
+				//increase the terminal count when no child was found
+				++terminal_count;
+			}
+
 
 			// when both(x2) sides do not have any valid moves to go, means a terminal state achieved
 			if (terminal_count >= 2)
+			{
+				if (popcount(track_boardB | track_boardW) <= 58)
+				{
+					boardViewer(track_boardB, track_boardW);
+					system("pause");
+				}
 				break;
+			}
 
 			//update the current player and opponent here when moving to the next move
 			current_turn = !current_turn;
 		}
 
 		// after breaking from the above termination, we try to check the current state's winner
-		boardViewer(track_boardB, track_boardW);
+		//boardViewer(track_boardB, track_boardW);
 
 	}
 }

@@ -147,7 +147,10 @@ void test()
 	if(result != nullptr)
 		mc->boardViewer(result->boardB, result->boardW);
 
-	mc->simulation(test_node);
+	for (int n = 0; n <= 1000;++n)
+	{	
+		mc->simulation(test_node);
+	}
 	for (int m = 0; m < 5; m++)
 	{
 		std::cout << "\nrandom number:" << getRandomNumber(0, 5);
