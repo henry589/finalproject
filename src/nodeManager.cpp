@@ -134,7 +134,7 @@ void vnode::BFS(vnode* node, vnode::OpType method, bool include_current_node)
 }
 
 // append child to the children head, the link name is 'sibling_next', append both black and white bitboards
-void vnode::append_child(uint64_t boardB, uint64_t boardW, const bool& turn, uint8_t action)
+void vnode::append_child(uint64_t boardB, uint64_t boardW, const Side& turn, uint8_t action)
 {
 	vnode* child_node = new vnode();
 	child_node->boardB = boardB;

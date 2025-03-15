@@ -121,11 +121,6 @@ inline T& operator--(T& d) { return d = T(int(d) - 1); }
 		ORTHO
 	};
 
-	enum Side : bool {
-		CURR = false,
-		OPPO = true
-	};
-
 	template<typename T1 = Square>
 	inline int distance(Square x, Square y);
 

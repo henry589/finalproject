@@ -4,6 +4,8 @@
 #include "nodeManager.h"
 #include "bitBoard.h"
 
+using namespace bitboard;
+
 class mcts {
 private:
 
@@ -18,9 +20,10 @@ public:
 	vnode* selection(vnode* root);
 	vnode* expansion(vnode* lfnode, const exp_mode& exp_mode = EXPANSION_FULL);
 	void simulation(vnode* exp_node);
-	void backup(vnode* lfnode, const bool& term_side, const bool& is_draw);
+	void backup(vnode* lfnode, const Side& win_side, const bool& is_draw);
+	Won check_winner(const Bitboard& blackBoard, const Bitboard& whiteBoard);
 	bool isTerminal(vnode* node);
-	void boardViewer(const bitboard::Bitboard& boardB, const bitboard::Bitboard& boardW);
+	void boardViewer(const Bitboard& boardB, const Bitboard& boardW);
 	vnode* createValidChildren(vnode* node, int& child_count);
 	vnode* createValidChild(vnode* node, int& child_count);
 	bool haveValidChild(vnode* node);

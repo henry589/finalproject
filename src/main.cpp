@@ -23,14 +23,14 @@ void test()
 {
 	vnode* list = NULL;
 
-	Side s = CURR;
+	Side s = BLACK;
 	vnode* parent_node = new vnode();
 	parent_node->boardB = 0;
 	std::cout << "start:" << std::endl;
 	// this is a routine to simulate addition of sibling to the children head
 	for (int i = 1; i < 6; ++i)
 	{
-		parent_node->append_child(i, i, bool(s), 0);
+		parent_node->append_child(i, i, Side(s), 0);
 	}
 	std::cout << "done:" << std::endl;
 
@@ -116,9 +116,10 @@ void test()
 	mcts* mc = new mcts();
 	mc->selection(selected_node);
 
-	bool win_side = CURR;
+	Side win_side = BLACK;
 	mc->backup(nextnextGen, win_side, true);
-
+	std::cout << mc->check_winner(nextnextGen->boardB, nextnextGen->boardW);
+	boardViewer(nextnextGen->boardB, nextnextGen->boardW);
 	std::cout << "score mod:" << nextGen->sim_reward;
 	int childCount = 0;
 	vnode* test_node = new vnode();
@@ -289,7 +290,7 @@ void valueVerificationTest() {
 
 void test_uct_formula()
 {
-	Side s = CURR;
+	Side s = BLACK;
 	vnode* parent_node = new vnode();
 	parent_node->sim_visits = 5;
 	parent_node->append_child(13, 14, s, 0);
