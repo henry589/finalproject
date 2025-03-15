@@ -75,6 +75,7 @@ vnode* mcts::selection(vnode* const root)
 }
 
 // expand the current node and return the randomly selected node for simulation
+// if return nullptr means a terminal state
 vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 {
 	if (exp_mode == EXPANSION_FULL)
@@ -151,16 +152,13 @@ void mcts::simulation(vnode* exp_node)
 		bool current_turn = exp_node->turn;
 		const int terminate_Criterion = 2;
 		int terminal_count = 0;
-		Bitboard mod_cur_boardB = 0;
-		Bitboard mod_cur_boardW = 0;
 		Bitboard mod_cur_boardB_list[33] = { 0 };
 		Bitboard mod_cur_boardW_list[33] = { 0 };
 		// first assume simulation running forever
 		while (true)
 		{
-			//bool chosen_once = false;
-			current_player = current_turn == BLACK ? track_boardB : track_boardW;
-			opponent = current_turn == WHITE ? track_boardB : track_boardW;
+			current_player = current_turn == CURR ? track_boardB : track_boardW;
+			opponent = current_turn == OPPO ? track_boardB : track_boardW;
 			overlapped_board = track_boardB | track_boardW;
 
 
@@ -179,27 +177,21 @@ void mcts::simulation(vnode* exp_node)
 					// if this square contain valid move
 					if (future_flips ^ 0)
 					{
-						// we let it do at least once, the rest whether to update the selection
-						// depends on probability
-						//if (chosen_once == false || random_bool(0.5))
-						{
-							mod_cur_boardB_list[possible_moves] = current_turn == BLACK ? future_flips | track_boardB | (1ULL << sq) : ~future_flips & track_boardB;
-							mod_cur_boardW_list[possible_moves] = current_turn == WHITE ? future_flips | track_boardW | (1ULL << sq) : ~future_flips & track_boardW;
-							++possible_moves;
-							//chosen_once = true;
-							terminal_count = 0; // reset termination count
-						}
+						mod_cur_boardB_list[possible_moves] = current_turn == CURR ? future_flips | track_boardB | (1ULL << sq) : ~future_flips & track_boardB;
+						mod_cur_boardW_list[possible_moves] = current_turn == OPPO ? future_flips | track_boardW | (1ULL << sq) : ~future_flips & track_boardW;
+						++possible_moves;
+						terminal_count = 0; // reset termination count
 					}
 				}
 			}
 			//make move and board flipped in track_board
 			if (possible_moves > 0)
 			{
-				const int random = fast_rand();
+				const int random = getRandomNumber(0,possible_moves-1);
 
-				track_boardB = mod_cur_boardB_list[random % possible_moves];
-				track_boardW = mod_cur_boardW_list[random % possible_moves];
-				boardViewer(track_boardB, track_boardW);
+				track_boardB = mod_cur_boardB_list[random];
+				track_boardW = mod_cur_boardW_list[random];
+				//boardViewer(track_boardB, track_boardW);
 
 			}
 			else
@@ -210,13 +202,14 @@ void mcts::simulation(vnode* exp_node)
 
 
 			// when both(x2) sides do not have any valid moves to go, means a terminal state achieved
-			if (terminal_count >= 2)
+			if (terminal_count >= terminate_Criterion)
 			{
-				if (popcount(track_boardB | track_boardW) <= 58)
+			/*	if (popcount(track_boardB | track_boardW) <= 58)
 				{
 					boardViewer(track_boardB, track_boardW);
+					std::cout<<std::endl<< "black:" << track_boardB << "white:" << track_boardW << ";";
 					system("pause");
-				}
+				}*/
 				break;
 			}
 
@@ -230,8 +223,35 @@ void mcts::simulation(vnode* exp_node)
 	}
 }
 
-void mcts::backup()
+// backup the score and visit count back to the root
+// term_side means the side when the game is terminal
+void mcts::backup(vnode * lfnode, const bool & win_side, const bool & is_draw)
 {
+	vnode* tmp_node = lfnode;
+	// here we traverse upward until the root node
+	while (tmp_node != nullptr)
+	{		
+		if (is_draw) // regardless of whose turn since it is a draw we just score them fairly
+		{
+			tmp_node->sim_reward += DRAW;
+		}
+		else {
+			// credit win/lose for both sides
+			if (tmp_node->turn == win_side)
+			{
+				tmp_node->sim_reward += WIN; 
+			}
+			else
+			{
+				tmp_node->sim_reward += LOSE;
+			}
+		}
+
+		tmp_node->sim_visits += 1; // increase the visit count
+
+		// back up to its parent
+		tmp_node = tmp_node->get_parent();
+	}
 }
 
 bool mcts::isTerminal(vnode* node)
@@ -273,14 +293,14 @@ vnode* mcts::createValidChildren(vnode* node, int& child_count)
 	// take current node and then check for all possible nodes this will follow the othello rule
 	Bitboard  cur_boardB = node->boardB;
 	Bitboard  cur_boardW = node->boardW;
-	Bitboard  cur_side = node->turn == BLACK ? cur_boardB : cur_boardW;
-	Bitboard  alt_side = node->turn == WHITE ? cur_boardB : cur_boardW;
+	Bitboard  cur_side = node->turn == CURR ? cur_boardB : cur_boardW;
+	Bitboard  alt_side = node->turn == OPPO ? cur_boardB : cur_boardW;
 	Bitboard  overlapped_board = cur_boardB | cur_boardW;
 
 	// assume the square sq is empty we have to know whether it is empty square first
 	for (Square sq = SQ_A1; sq <= SQ_H8; ++sq)
 	{
-		// check if not empty empty
+		// check if not empty 
 		if (overlapped_board & (1ULL << sq))
 		{
 			continue;
@@ -291,8 +311,8 @@ vnode* mcts::createValidChildren(vnode* node, int& child_count)
 
 			if (future_flips ^ 0) // future_flips contain something also means not equal to zero
 			{
-				Bitboard mod_cur_boardB = node->turn == BLACK ? future_flips | cur_boardB | (1ULL << sq) : ~future_flips & cur_boardB;
-				Bitboard mod_cur_boardW = node->turn == WHITE ? future_flips | cur_boardW | (1ULL << sq) : ~future_flips & cur_boardW;
+				Bitboard mod_cur_boardB = node->turn == CURR ? future_flips | cur_boardB | (1ULL << sq) : ~future_flips & cur_boardB;
+				Bitboard mod_cur_boardW = node->turn == OPPO ? future_flips | cur_boardW | (1ULL << sq) : ~future_flips & cur_boardW;
 				node->append_child(mod_cur_boardB, mod_cur_boardW, !node->turn, sq);
 				++child_count;
 			}
@@ -309,8 +329,8 @@ vnode* mcts::createValidChild(vnode* node, int& child_count)
 	// take current node and then check for all possible nodes this will follow the othello rule
 	Bitboard  cur_boardB = node->boardB;
 	Bitboard  cur_boardW = node->boardW;
-	Bitboard  cur_side = node->turn == BLACK ? cur_boardB : cur_boardW;
-	Bitboard  alt_side = node->turn == WHITE ? cur_boardB : cur_boardW;
+	Bitboard  cur_side = node->turn == CURR ? cur_boardB : cur_boardW;
+	Bitboard  alt_side = node->turn == OPPO ? cur_boardB : cur_boardW;
 	Bitboard  overlapped_board = cur_boardB | cur_boardW;
 
 	std::vector<Square> potentialSquare;
@@ -340,15 +360,14 @@ vnode* mcts::createValidChild(vnode* node, int& child_count)
 		Square sq_selected = potentialSquare[idx];
 
 		const Bitboard future_flips = actual_flips(sq_selected, cur_side, alt_side);
-		Bitboard mod_cur_boardB = node->turn == BLACK ? future_flips | cur_boardB | (1ULL << sq_selected) : ~future_flips & cur_boardB;
-		Bitboard mod_cur_boardW = node->turn == WHITE ? future_flips | cur_boardW | (1ULL << sq_selected) : ~future_flips & cur_boardW;
+		Bitboard mod_cur_boardB = node->turn == CURR ? future_flips | cur_boardB | (1ULL << sq_selected) : ~future_flips & cur_boardB;
+		Bitboard mod_cur_boardW = node->turn == OPPO ? future_flips | cur_boardW | (1ULL << sq_selected) : ~future_flips & cur_boardW;
 		node->append_child(mod_cur_boardB, mod_cur_boardW, !node->turn, sq_selected);
 	}
 
+	// if return nullptr means no valid child exist
 	return node->get_children();
 
-	// return nullptr means no valid child exist
-	return nullptr;
 }
 
 bool mcts::haveValidChild(vnode* node)
@@ -357,8 +376,8 @@ bool mcts::haveValidChild(vnode* node)
 	// this will follow the othello rule
 	Bitboard  cur_boardB = node->boardB;
 	Bitboard  cur_boardW = node->boardW;
-	Bitboard  cur_side = node->turn == BLACK ? cur_boardB : cur_boardW;
-	Bitboard  alt_side = node->turn == WHITE ? cur_boardB : cur_boardW;
+	Bitboard  cur_side = node->turn == CURR ? cur_boardB : cur_boardW;
+	Bitboard  alt_side = node->turn == OPPO ? cur_boardB : cur_boardW;
 	Bitboard  overlapped_board = cur_boardB | cur_boardW;
 
 	// assume the square sq is empty we have to know whether it is empty square first

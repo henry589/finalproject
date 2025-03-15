@@ -23,7 +23,7 @@ void test()
 {
 	vnode* list = NULL;
 
-	Side s = BLACK;
+	Side s = CURR;
 	vnode* parent_node = new vnode();
 	parent_node->boardB = 0;
 	std::cout << "start:" << std::endl;
@@ -116,6 +116,10 @@ void test()
 	mcts* mc = new mcts();
 	mc->selection(selected_node);
 
+	bool win_side = CURR;
+	mc->backup(nextnextGen, win_side, true);
+
+	std::cout << "score mod:" << nextGen->sim_reward;
 	int childCount = 0;
 	vnode* test_node = new vnode();
 	// test_node->boardB = 0x4a000a200080060;
@@ -147,7 +151,7 @@ void test()
 	if(result != nullptr)
 		mc->boardViewer(result->boardB, result->boardW);
 
-	for (int n = 0; n <= 1000;++n)
+	for (int n = 0; n <= 1;++n)
 	{	
 		mc->simulation(test_node);
 	}
@@ -285,7 +289,7 @@ void valueVerificationTest() {
 
 void test_uct_formula()
 {
-	Side s = BLACK;
+	Side s = CURR;
 	vnode* parent_node = new vnode();
 	parent_node->sim_visits = 5;
 	parent_node->append_child(13, 14, s, 0);

@@ -82,7 +82,7 @@ std::mt19937 createGenerator() {
 thread_local std::mt19937 generator = createGenerator();
 
 // 3) Super-fast integer generator, with a tiny modulo bias
-int getRandomNumber(int min, int max) {
+int getRandomNumber(const int& min, const int& max) {
 	// One RNG call -> 32-bit random number
 	const std::uint32_t& r = generator();
 

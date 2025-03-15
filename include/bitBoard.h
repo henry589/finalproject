@@ -122,8 +122,8 @@ inline T& operator--(T& d) { return d = T(int(d) - 1); }
 	};
 
 	enum Side : bool {
-		BLACK = false,
-		WHITE = true
+		CURR = false,
+		OPPO = true
 	};
 
 	template<typename T1 = Square>

@@ -8,7 +8,7 @@
 bool random_bool(double probability = 0.5);
 
 // Generates a random number within the range [min, max]
-int getRandomNumber(int min, int max);
+int getRandomNumber(const int& min, const int& max);
 
 int fast_rand();
 // Creates a high-entropy seed sequence for the random number generator
