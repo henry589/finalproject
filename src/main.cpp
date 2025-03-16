@@ -116,9 +116,9 @@ void test()
 	mcts* mc = new mcts();
 	mc->selection(selected_node);
 
-	Side win_side = BLACK;
-	mc->backup(nextnextGen, win_side, true);
-	std::cout << mc->check_winner(nextnextGen->boardB, nextnextGen->boardW);
+	/*Side win_side = BLACK;
+	mc->backup(nextnextGen,win_side, false);*/
+	//std::cout << mc->check_winner(nextnextGen->boardB, nextnextGen->boardW);
 	boardViewer(nextnextGen->boardB, nextnextGen->boardW);
 	std::cout << "score mod:" << nextGen->sim_reward;
 	int childCount = 0;
@@ -126,7 +126,6 @@ void test()
 	// test_node->boardB = 0x4a000a200080060;
 	// test_node->boardW = 0x8101c30002000;
 	//test_node->boardW = 0x81402400d0492a44;
-	//test_node->boardB = 0x4200000821940028;
 	test_node->boardW = 0x1008000000;
 	test_node->boardB = 0x810000000;
 
@@ -152,10 +151,10 @@ void test()
 	if(result != nullptr)
 		mc->boardViewer(result->boardB, result->boardW);
 
-	for (int n = 0; n <= 1;++n)
-	{	
-		mc->simulation(test_node);
-	}
+	//for (int n = 0; n <= 1;++n)
+	//{	
+	//	mc->simulation(test_node);
+	//}
 	for (int m = 0; m < 5; m++)
 	{
 		std::cout << "\nrandom number:" << getRandomNumber(0, 5);
@@ -301,6 +300,57 @@ void test_uct_formula()
 	std::cout << "\nuct calculated:" << testnode->calc_uct() << std::endl;
 }
 
+void mctstest() {
+
+	mcts* mc = new mcts();
+	vnode* root_node = new vnode();
+	//root_node->boardW = 0x11f1d1d1fff037f;
+	////root_node->boardB = 0x3e2022e22000bc00;
+	//root_node->boardW = 0x4043c04000000;
+	//root_node->boardB = 0x200018060300;
+	//test_node->boardB = 0x4200000821940028;
+	root_node->boardW = 0x1020f00042070a00;
+	root_node->boardB = 0x408381c080138;
+	//boardViewer(root_node->boardB, root_node->boardW);
+	//Won winner_iss = mc->simulation(root_node);
+
+	//system("pause");
+	root_node->turn = BLACK;
+	for (int n = 0; n <= 1000000; ++n)
+	{
+		vnode* leaf_selected = mc->selection(root_node);
+		vnode* exp_node = mc->expansion(leaf_selected);
+		Won winner_is = mc->simulation(exp_node);
+		mc->backup(exp_node, winner_is);
+		//system("pause");
+	}
+
+	vnode * best_node = mc->get_best_move(root_node);
+	boardViewer(best_node->boardB, best_node->boardW);
+	std::cout << "\nvisit count :" << best_node->sim_visits;
+
+
+
+
+	//mc->expansion(root_node);
+	//vnode* children = root_node->get_children();
+
+	//vnode* tmp_child = children;
+	//int n = 0;
+	//while (tmp_child != nullptr)
+	//{
+	//	std::cout << "\nnext board:";
+	//	boardViewer(tmp_child->boardB, tmp_child->boardW);
+	//	tmp_child = tmp_child->get_next_sibling();
+	//	++n;
+	//}
+
+	//std::cout << "\ntotal:" << n;
+	//vnode::BFS(test_node, vnode::OpType::TRAVERSE, false);
+	//std::string x2 = vnode::get_dot_formatted();
+	//std::cout << "\nsearch:" << x2;
+
+}
 int main() {
 	// try {
 	//     valueVerificationTest();
@@ -312,9 +362,10 @@ int main() {
 	// }
 	init_Bitboards();
 
-	test();
-	test_uct_formula();
+	//test();
+	//test_uct_formula();
 	std::cout << "hello";
+	mctstest();
 	// std::cout<<"\nindexed:"<<magics[SQ_F5][ORTHO - DIAGO].rays_bb(0x2000008400000020);
 
 	// uint64_t boardx = 0;

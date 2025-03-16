@@ -147,13 +147,19 @@ void vnode::append_child(uint64_t boardB, uint64_t boardW, const Side& turn, uin
 }
 
 // get the current node uct value;
-double vnode::calc_uct()
-{
-	if (sim_visits == 0) {
-		return std::numeric_limits<double>::infinity(); // Encourage exploration
-	}
-	return (sim_reward / sim_visits) + explorationConstant * std::sqrt(std::log(parent->sim_visits) / sim_visits);
+double vnode::calc_uct() {
+    // If never visited, return a large number to prioritize exploration:
+    if (sim_visits == 0)
+        return std::numeric_limits<double>::infinity();
+
+    double avg = sim_reward / static_cast<double>(sim_visits);
+    double explorationTerm = explorationConstant
+                            * std::sqrt(std::log(parent->sim_visits)
+                                        / static_cast<double>(sim_visits));
+
+    return avg + explorationTerm;
 }
+
 
 // always point to the head of the children list
 vnode* vnode::get_children()

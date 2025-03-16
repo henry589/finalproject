@@ -15,7 +15,7 @@ vnode* mcts::selection(vnode* const root)
 		vnode* child = curr_node->get_children();
 		if (!child)
 		{
-			std::cout << "\nselected leaf: " << curr_node->boardB << '\n';
+			//std::cout << "\nselected leaf: " << curr_node->boardB << '\n';
 			return curr_node;
 		}
 
@@ -59,8 +59,8 @@ vnode* mcts::selection(vnode* const root)
 			std::size_t idx = fast_rand() % unvisited_nodes.size();
 			vnode* selected = unvisited_nodes[idx];
 
-			std::cout << "\nselected leaf: " << selected->boardB
-				<< ", size: " << unvisited_nodes.size() << '\n';
+			//std::cout << "\nselected leaf: " << selected->boardB
+			//	<< ", size: " << unvisited_nodes.size() << '\n';
 
 			return selected;
 		}
@@ -95,7 +95,7 @@ vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 			// if switched player also fail means this is most probably a terminal state
 			if (switch_player_node == nullptr)
 			{
-				return nullptr;
+				return lfnode;
 			}
 			else {
 				// revive the expansion process
@@ -125,7 +125,8 @@ vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 		{
 			lfnode->turn = Side(!lfnode->turn);
 			// return the switched player child
-			return createValidChild(lfnode, valid_child_count);
+			vnode* child_tmp = createValidChild(lfnode, valid_child_count);
+			return child_tmp == nullptr? lfnode: child_tmp;
 		}
 		return child;
 	}
@@ -133,7 +134,7 @@ vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 	return nullptr;
 }
 
-void mcts::simulation(vnode* exp_node)
+Won mcts::simulation(vnode* exp_node)
 {
 	// if exp_node is null means it is a terminal node, directly skip simulation because no any
 	// simulations could be done here
@@ -190,7 +191,7 @@ void mcts::simulation(vnode* exp_node)
 
 				track_boardB = mod_cur_boardB_list[random];
 				track_boardW = mod_cur_boardW_list[random];
-				boardViewer(track_boardB, track_boardW);
+				//boardViewer(track_boardB, track_boardW);
 
 			}
 			else
@@ -209,7 +210,8 @@ void mcts::simulation(vnode* exp_node)
 					std::cout<<std::endl<< "black:" << track_boardB << "white:" << track_boardW << ";";
 					system("pause");
 				}*/
-				break;
+				return check_winner(track_boardB, track_boardW);
+				
 			}
 
 			//update the current player and opponent here when moving to the next move
@@ -220,13 +222,25 @@ void mcts::simulation(vnode* exp_node)
 		//boardViewer(track_boardB, track_boardW);
 
 	}
+	return Won::PLAYER_DRAW;
+}
+
+Won mcts::check_winner(const Bitboard& blackBoard, const Bitboard& whiteBoard)
+{
+	const int blackPieces = popcount(blackBoard);
+	const int whitePieces = popcount(whiteBoard);
+
+	return blackPieces > whitePieces ? (Won::BLACK_PLAYER) : blackPieces == whitePieces ? (Won::PLAYER_DRAW) : (Won::WHITE_PLAYER);
 }
 
 // backup the score and visit count back to the root
 // term_side means the side when the game is terminal
-void mcts::backup(vnode * lfnode, const Side& win_side, const bool & is_draw)
+void mcts::backup(vnode * exp_node, const Won & winner_is)
 {
-	vnode* tmp_node = lfnode;
+Side win_side = winner_is == BLACK_PLAYER ? Side::BLACK : Side::WHITE;
+	bool is_draw = winner_is == PLAYER_DRAW ? true : false;
+
+	vnode* tmp_node = exp_node;
 	// here we traverse upward until the root node
 	while (tmp_node != nullptr)
 	{		
@@ -253,12 +267,28 @@ void mcts::backup(vnode * lfnode, const Side& win_side, const bool & is_draw)
 	}
 }
 
-Won mcts::check_winner(const Bitboard& blackBoard, const Bitboard& whiteBoard)
-{
-	const int blackPieces = popcount(blackBoard);
-	const int whitePieces = popcount(whiteBoard);
 
-	return blackPieces > whitePieces ? (Won::BLACK_PLAYER) : blackPieces == whitePieces ? (Won::PLAYER_DRAW) : (Won::WHITE_PLAYER);
+// Function to get the best move based on visit count
+vnode* mcts::get_best_move(vnode* root_node) {
+	if (!root_node) return nullptr;
+
+	vnode * children = root_node->get_children();
+	vnode* tmp = children;
+
+	vnode* currentBestNode = nullptr;
+	double currentBestScore = -std::numeric_limits<double>::infinity();
+	while (tmp != nullptr)
+	{
+		if (tmp->sim_reward > currentBestScore)
+		{
+			currentBestNode = tmp;
+			currentBestScore = tmp->sim_reward;
+		}
+
+		std::cout << "\ncurrent visit:" << tmp->sim_visits<<", returns:"<<tmp->sim_reward;
+		tmp = tmp->get_next_sibling();
+	}
+	return currentBestNode;
 }
 
 bool mcts::isTerminal(vnode* node)
