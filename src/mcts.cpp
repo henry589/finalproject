@@ -131,6 +131,7 @@ vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 		return child;
 	}
 
+	system("pause");
 	return nullptr;
 }
 
@@ -285,7 +286,7 @@ vnode* mcts::get_best_move(vnode* root_node) {
 			currentBestScore = tmp->sim_reward;
 		}
 
-		std::cout << "\ncurrent visit:" << tmp->sim_visits<<", returns:"<<tmp->sim_reward;
+		std::cout << "\ncurrent visit:" << tmp->sim_visits<<", returns:"<<tmp->sim_reward<<",act:"<<tmp->action_taken;
 		tmp = tmp->get_next_sibling();
 	}
 	return currentBestNode;
@@ -330,8 +331,8 @@ vnode* mcts::createValidChildren(vnode* node, int& child_count)
 	// take current node and then check for all possible nodes this will follow the othello rule
 	Bitboard  cur_boardB = node->boardB;
 	Bitboard  cur_boardW = node->boardW;
-	Bitboard  cur_side = node->turn == BLACK ? cur_boardB : cur_boardW;
-	Bitboard  alt_side = node->turn == WHITE ? cur_boardB : cur_boardW;
+	Bitboard  cur_side = node->turn == BLACK ? cur_boardW : cur_boardB;
+	Bitboard  alt_side = node->turn == WHITE ? cur_boardW : cur_boardB;
 	Bitboard  overlapped_board = cur_boardB | cur_boardW;
 
 	// assume the square sq is empty we have to know whether it is empty square first
@@ -348,8 +349,8 @@ vnode* mcts::createValidChildren(vnode* node, int& child_count)
 
 			if (future_flips ^ 0) // future_flips contain something also means not equal to zero
 			{
-				Bitboard mod_cur_boardB = node->turn == BLACK ? future_flips | cur_boardB | (1ULL << sq) : ~future_flips & cur_boardB;
-				Bitboard mod_cur_boardW = node->turn == WHITE ? future_flips | cur_boardW | (1ULL << sq) : ~future_flips & cur_boardW;
+				Bitboard mod_cur_boardW = node->turn == BLACK ? future_flips | cur_boardW | (1ULL << sq) : ~future_flips & cur_boardW;
+				Bitboard mod_cur_boardB = node->turn == WHITE ? future_flips | cur_boardB | (1ULL << sq) : ~future_flips & cur_boardB;
 				node->append_child(mod_cur_boardB, mod_cur_boardW, Side(!node->turn), sq);
 				++child_count;
 			}
@@ -366,8 +367,8 @@ vnode* mcts::createValidChild(vnode* node, int& child_count)
 	// take current node and then check for all possible nodes this will follow the othello rule
 	Bitboard  cur_boardB = node->boardB;
 	Bitboard  cur_boardW = node->boardW;
-	Bitboard  cur_side = node->turn == BLACK ? cur_boardB : cur_boardW;
-	Bitboard  alt_side = node->turn == WHITE ? cur_boardB : cur_boardW;
+	Bitboard  cur_side = node->turn == BLACK ? cur_boardW : cur_boardB;
+	Bitboard  alt_side = node->turn == WHITE ? cur_boardW : cur_boardB;
 	Bitboard  overlapped_board = cur_boardB | cur_boardW;
 
 	std::vector<Square> potentialSquare;
@@ -397,8 +398,8 @@ vnode* mcts::createValidChild(vnode* node, int& child_count)
 		Square sq_selected = potentialSquare[idx];
 
 		const Bitboard future_flips = actual_flips(sq_selected, cur_side, alt_side);
-		Bitboard mod_cur_boardB = node->turn == BLACK ? future_flips | cur_boardB | (1ULL << sq_selected) : ~future_flips & cur_boardB;
-		Bitboard mod_cur_boardW = node->turn == WHITE ? future_flips | cur_boardW | (1ULL << sq_selected) : ~future_flips & cur_boardW;
+		Bitboard mod_cur_boardW = node->turn == BLACK ? future_flips | cur_boardW | (1ULL << sq_selected) : ~future_flips & cur_boardW;
+		Bitboard mod_cur_boardB = node->turn == WHITE ? future_flips | cur_boardB | (1ULL << sq_selected) : ~future_flips & cur_boardB;
 		node->append_child(mod_cur_boardB, mod_cur_boardW, Side(!node->turn), sq_selected);
 	}
 

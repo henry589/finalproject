@@ -309,13 +309,13 @@ void mctstest() {
 	//root_node->boardW = 0x4043c04000000;
 	//root_node->boardB = 0x200018060300;
 	//test_node->boardB = 0x4200000821940028;
-	root_node->boardW = 0x1020f00042070a00;
-	root_node->boardB = 0x408381c080138;
+	root_node->boardW = 0x48102060c08000;
+	root_node->boardB = 0xfab7efdf9f3f7fff;
 	//boardViewer(root_node->boardB, root_node->boardW);
 	//Won winner_iss = mc->simulation(root_node);
 
 	//system("pause");
-	root_node->turn = BLACK;
+	root_node->turn = WHITE; //default as white first
 	for (int n = 0; n <= 1000000; ++n)
 	{
 		vnode* leaf_selected = mc->selection(root_node);
