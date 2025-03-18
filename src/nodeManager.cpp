@@ -11,6 +11,7 @@ void vnode::remove_node(vnode* node)
 		while (ptr != nullptr)
 		{
 			// std::cout<<"info:"<<ptr->boardB<<std::endl;
+			std::lock_guard<std::recursive_mutex> lock(node->parent->node_mutex);
 
 			if (ptr == node)
 			{
@@ -51,6 +52,8 @@ std::string vnode::get_dot_formatted() {
 }
 
 void vnode::traverse(vnode* node) {
+	std::lock_guard<std::recursive_mutex> lock(node->node_mutex);
+
 	ss << std::endl << "a" << node->parent->boardB << "->" << "a" << node->boardB << ";";
 	//std::cout<< "a" << node->parent->boardB << "->" << "a" << node->boardB << ";";
 }
@@ -101,6 +104,8 @@ void vnode::BFS(vnode* node, vnode::OpType method, bool include_current_node)
 		// }
 		while (children != nullptr)
 		{
+			std::lock_guard<std::recursive_mutex> lock(children->node_mutex);
+
 			// first element in queue
 			if (queue_exit == nullptr)
 			{
@@ -136,6 +141,7 @@ void vnode::BFS(vnode* node, vnode::OpType method, bool include_current_node)
 // append child to the children head, the link name is 'sibling_next', append both black and white bitboards
 void vnode::append_child(uint64_t boardB, uint64_t boardW, const Side& turn, uint8_t action)
 {
+	std::lock_guard<std::recursive_mutex> lock(node_mutex);
 	vnode* child_node = new vnode();
 	child_node->boardB = boardB;
 	child_node->boardW = boardW;
@@ -148,6 +154,8 @@ void vnode::append_child(uint64_t boardB, uint64_t boardW, const Side& turn, uin
 
 // get the current node uct value;
 double vnode::calc_uct() {
+	std::lock_guard<std::recursive_mutex> lock(node_mutex);
+
     // If never visited, return a large number to prioritize exploration:
     if (sim_visits == 0)
         return std::numeric_limits<double>::infinity();
@@ -164,6 +172,8 @@ double vnode::calc_uct() {
 // always point to the head of the children list
 vnode* vnode::get_children()
 {
+	std::lock_guard<std::recursive_mutex> lock(node_mutex);
+
 	return children_head;
 }
 

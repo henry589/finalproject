@@ -1,3 +1,4 @@
+#if 0
 #include <algorithm>  // for std::max
 #include <cstdlib>    // for std::malloc, std::free
 #include <mutex>      // for std::mutex, std::lock_guard
@@ -309,8 +310,8 @@ void mctstest() {
 	//root_node->boardW = 0x4043c04000000;
 	//root_node->boardB = 0x200018060300;
 	//test_node->boardB = 0x4200000821940028;
-	root_node->boardW = 0x48102060c08000;
-	root_node->boardB = 0xfab7efdf9f3f7fff;
+	root_node->boardW = 0x1008000000;
+	root_node->boardB = 0x810000000;
 	//boardViewer(root_node->boardB, root_node->boardW);
 	//Won winner_iss = mc->simulation(root_node);
 
@@ -411,3 +412,96 @@ int main() {
 //     dummy->boardViewer(nb, boardx);
 	return 0;
 }
+
+#endif
+
+
+#if 1
+
+#include <algorithm>  // for std::max
+#include <cstdlib>    // for std::malloc, std::free
+#include <mutex>      // for std::mutex, std::lock_guard
+#include <vector>     // for std::vector
+#include <stdexcept>  // for std::bad_alloc
+#include <cassert>
+#include <iostream>
+#include <thread>
+#include <cstring> // For memset and memcpy
+#include <sstream>
+#include "../include/memoryPool.h"
+#include "../include/nodeManager.h"
+#include "../include/mcts.h"
+#include "../include/bitBoard.h"
+#include "../include/misc.h"
+
+using namespace bitboard;
+
+MemoryPool vnode::pool = MemoryPool(sizeof(vnode), 100000);
+std::stringstream vnode::ss;
+// Example function that each thread will run
+void mctsWorker(mcts* engine, vnode* root, int numSimulations) {
+	for (int i = 0; i < numSimulations; i++) {
+		// Standard MCTS steps
+		vnode* leaf = engine->selection(root);
+		vnode* expanded = engine->expansion(leaf, mcts::EXPANSION_FULL);
+		Won   result = engine->simulation(expanded);
+		engine->backup(expanded, result);
+	}
+}
+
+int main() {
+	// 1) Initialize bitboard environment, etc.
+	init_Bitboards();
+
+	// 2) Create your root node
+	vnode* root = new vnode();
+	// Initialize root->boardB / root->boardW as needed
+	// root->boardB = ...
+	// root->boardW = ...
+	// root->turn   = WHITE;  // or BLACK
+	root->boardW = 0x2012f70c04;
+	root->boardB = 0x6a5ca8082028;
+	//boardViewer(root_node->boardB, root_node->boardW);
+	//Won winner_iss = mc->simulation(root_node);
+
+	//system("pause");
+	root->turn = WHITE; //default as white first
+	// 3) Create an MCTS engine
+	mcts engine;
+
+	// 4) Decide how many total simulations you want and how many threads
+	const int totalSimulations = 10000000;
+	const int numThreads = 16;
+
+	// 5) Distribute simulations among threads. 
+	//    E.g. each thread does totalSimulations / numThreads:
+	const int simsPerThread = totalSimulations / numThreads;
+
+	// 6) Launch threads
+	std::vector<std::thread> threadPool;
+	threadPool.reserve(numThreads);
+
+	for (int t = 0; t < numThreads; t++) {
+		// Capture 'engine' and 'root' by pointer to share them
+		threadPool.emplace_back(mctsWorker, &engine, root, simsPerThread);
+	}
+
+	// 7) Wait for all threads to finish
+	for (auto& thr : threadPool) {
+		thr.join();
+	}
+
+	// 8) After all simulations are done, retrieve the best move
+	vnode* bestMove = engine.get_best_move(root);
+
+	// 9) Print some info about the best move, or visualize
+	if (bestMove) {
+		std::cout << "\nBest move's visits: " << bestMove->sim_visits
+			<< ", reward: " << bestMove->sim_reward
+			<< ", action: " << (int)bestMove->action_taken << "\n";
+		engine.boardViewer(bestMove->boardB, bestMove->boardW);
+	}
+
+	return 0;
+}
+#endif

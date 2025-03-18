@@ -32,6 +32,10 @@ private:
 	static void remove_node(vnode* node);
 
 public:
+
+	// Added mutex for per-node thread safety.
+	mutable std::recursive_mutex node_mutex;
+
 	static std::stringstream ss;
 	static MemoryPool pool;
 	uint64_t boardB;

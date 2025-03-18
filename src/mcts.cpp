@@ -30,6 +30,8 @@ vnode* mcts::selection(vnode* const root)
 		// Traverse all siblings
 		for (; child; child = child->get_next_sibling())
 		{
+			std::lock_guard<std::recursive_mutex> lock(child->node_mutex);
+
 			// If unvisited, add to the vector
 			if (child->sim_visits == 0)
 			{
@@ -89,6 +91,8 @@ vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 		// is a hard re-set of the turn
 		if (tmp_node == nullptr)
 		{
+			std::lock_guard<std::recursive_mutex> lock(lfnode->node_mutex);
+
 			lfnode->turn = Side(!lfnode->turn);
 			vnode* switch_player_node = createValidChildren(lfnode, valid_child_count);
 			nonce = valid_child_count > 0 ? getRandomNumber(0, valid_child_count - 1) : -1;
@@ -123,6 +127,8 @@ vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 		// is a hard re-set of the turn
 		if (child == nullptr)
 		{
+			std::lock_guard<std::recursive_mutex> lock(lfnode->node_mutex);
+
 			lfnode->turn = Side(!lfnode->turn);
 			// return the switched player child
 			vnode* child_tmp = createValidChild(lfnode, valid_child_count);
@@ -130,8 +136,8 @@ vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 		}
 		return child;
 	}
-
-	system("pause");
+	//std::cout << "asdasdasd";
+	//system("pause");
 	return nullptr;
 }
 
@@ -245,6 +251,8 @@ Side win_side = winner_is == BLACK_PLAYER ? Side::BLACK : Side::WHITE;
 	// here we traverse upward until the root node
 	while (tmp_node != nullptr)
 	{		
+		std::lock_guard<std::recursive_mutex> lock(tmp_node->node_mutex);
+
 		if (is_draw) // regardless of whose turn since it is a draw we just score them fairly
 		{
 			tmp_node->sim_reward += DRAW;
@@ -280,6 +288,8 @@ vnode* mcts::get_best_move(vnode* root_node) {
 	double currentBestScore = -std::numeric_limits<double>::infinity();
 	while (tmp != nullptr)
 	{
+		std::lock_guard<std::recursive_mutex> lock(tmp->node_mutex);
+
 		if (tmp->sim_reward > currentBestScore)
 		{
 			currentBestNode = tmp;
@@ -351,6 +361,8 @@ vnode* mcts::createValidChildren(vnode* node, int& child_count)
 			{
 				Bitboard mod_cur_boardW = node->turn == BLACK ? future_flips | cur_boardW | (1ULL << sq) : ~future_flips & cur_boardW;
 				Bitboard mod_cur_boardB = node->turn == WHITE ? future_flips | cur_boardB | (1ULL << sq) : ~future_flips & cur_boardB;
+				std::lock_guard<std::recursive_mutex> lock(node->node_mutex);
+
 				node->append_child(mod_cur_boardB, mod_cur_boardW, Side(!node->turn), sq);
 				++child_count;
 			}
@@ -400,6 +412,8 @@ vnode* mcts::createValidChild(vnode* node, int& child_count)
 		const Bitboard future_flips = actual_flips(sq_selected, cur_side, alt_side);
 		Bitboard mod_cur_boardW = node->turn == BLACK ? future_flips | cur_boardW | (1ULL << sq_selected) : ~future_flips & cur_boardW;
 		Bitboard mod_cur_boardB = node->turn == WHITE ? future_flips | cur_boardB | (1ULL << sq_selected) : ~future_flips & cur_boardB;
+		std::lock_guard<std::recursive_mutex> lock(node->node_mutex);
+
 		node->append_child(mod_cur_boardB, mod_cur_boardW, Side(!node->turn), sq_selected);
 	}
 
