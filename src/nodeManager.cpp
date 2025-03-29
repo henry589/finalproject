@@ -21,7 +21,7 @@ void vnode::remove_node(vnode* node)
 				else
 					prev_node->sibling_next = ptr->sibling_next;
 				delete(node);
-				std::cout << "successfully remove child:" << node->boardB << ",parent is:" << node->parent->boardB << std::endl;
+				//std::cout << "successfully remove child:" << node->boardB << ",parent is:" << node->parent->boardB << std::endl;
 				break;
 			}
 			prev_node = ptr;
@@ -31,7 +31,7 @@ void vnode::remove_node(vnode* node)
 	else if (node->parent == nullptr) //when parent is null means it is a root node
 	{
 		//then just delete the node will do
-		std::cout << "root point successfully removed:" << node->boardB << std::endl;
+		//std::cout << "root point successfully removed:" << node->boardB << std::endl;
 
 		delete(node);
 	}
@@ -146,6 +146,7 @@ void vnode::append_child(uint64_t boardB, uint64_t boardW, const Side& turn, uin
 	child_node->boardB = boardB;
 	child_node->boardW = boardW;
 	child_node->action_taken = action;
+
 	child_node->turn = turn;
 	child_node->sibling_next = children_head;
 	child_node->parent = this;
@@ -168,6 +169,15 @@ double vnode::calc_uct() {
     return avg + explorationTerm;
 }
 
+double vnode::calc_puct(double c_puct) {
+	std::lock_guard<std::recursive_mutex> lock(node_mutex);
+
+	double Q = (sim_visits > 0) ? (sim_reward / static_cast<double>(sim_visits)) : 0.0;
+	double N_parent = static_cast<double>(parent->sim_visits);
+	double exploration = c_puct * prior * (std::sqrt(N_parent) / (1.0 + static_cast<double>(sim_visits)));
+
+	return Q + exploration;
+}
 
 // always point to the head of the children list
 vnode* vnode::get_children()

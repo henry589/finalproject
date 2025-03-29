@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <cmath>
 #include "memoryPool.h"
+#include "othelloNet.h"
 
 enum Side : bool {
 	BLACK = false,
@@ -44,6 +45,8 @@ public:
 	uint64_t sim_visits = 0;
 	Side turn;
 	double sim_reward = 0.0;
+	double prior = 0.0;
+
 	static constexpr double explorationConstant = 1.414;
 
 	enum class OpType {
@@ -64,6 +67,7 @@ public:
 	static void traverse(vnode* node);
 	static void BFS(vnode* node, OpType method = OpType::TRAVERSE, bool include_current_node = false);
 	double calc_uct();
+	double calc_puct(double c_puct);
 	// Tree manipulation functions
 	void append_child(uint64_t boardB, uint64_t boardW, const Side& turn, uint8_t action);
 	vnode* get_children();

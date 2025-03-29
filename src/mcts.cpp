@@ -1,9 +1,93 @@
-#include "../include/mcts.h"
+﻿#include "../include/mcts.h"
 #include "../include/misc.h"
 #include <iostream>
 #include "../include/bitBoard.h"
+#include "../include/othelloNet.h"
+
+// a global network pointer defined somewhere:
+extern OthelloNet model;
 
 
+vnode* mcts::selection_ai(vnode* root, double c_puct) {
+	vnode* curr = root;
+	while (curr) {
+		vnode* child = curr->get_children();
+		if (!child) return curr;
+
+		vnode* best = nullptr;
+		double best_score = -std::numeric_limits<double>::infinity();
+		for (; child; child = child->get_next_sibling()) {
+			std::lock_guard<std::recursive_mutex> lock(child->node_mutex);
+			double score = child->calc_puct(c_puct);
+			if (score > best_score) {
+				best_score = score;
+				best = child;
+			}
+		}
+		curr = best;
+	}
+	return nullptr;
+}
+void mcts::update_prior(vnode* expanded_children)
+{
+	// Collect all board tensors
+	std::vector<torch::Tensor> boards;
+	std::vector<vnode*> nodes;  // To map back after inference
+
+	vnode* tmp_node = expanded_children;
+	while (tmp_node != nullptr)
+	{
+		// Create tensor for this node's board and remove batch dim: [1, 2, 8, 8] → [2, 8, 8]
+		torch::Tensor board = OthelloNetImpl::encode_board(tmp_node->boardB, tmp_node->boardW).squeeze(0);
+		boards.push_back(board);
+		nodes.push_back(tmp_node);
+		tmp_node = tmp_node->get_next_sibling();
+	}
+
+	// Stack all tensors into a batch: [N, 2, 8, 8]
+	torch::Tensor boardTensor = torch::stack(boards).to(torch::kCUDA);
+
+	// Run batched inference
+	auto result = model->forward(boardTensor);
+	auto policy_logits = std::get<0>(result).to(torch::kCPU);  // [N, 64]
+
+	// Apply softmax to get valid priors
+	torch::Tensor policy_probs = torch::softmax(policy_logits, 1);  // [N, 64]
+
+	// Assign prior to each node based on its action_taken
+	for (size_t i = 0; i < nodes.size(); ++i)
+	{
+		int move = nodes[i]->action_taken;  // should be 0–63
+		nodes[i]->prior = policy_probs[i][move].item<double>();
+	}
+}
+Won mcts::simulation_ai(vnode* exp_node) {
+	// If the node is not null (i.e. not a terminal state), use the network evaluation.
+	if (exp_node != nullptr) {
+		// Encode the board state; this produces a tensor of shape [1, 2, 8, 8]
+		torch::Tensor boardTensor = OthelloNetImpl::encode_board(exp_node->boardB, exp_node->boardW);
+		boardTensor = boardTensor.to(torch::kCUDA);
+
+		// Run a forward pass through the network.
+		// The network returns a tuple: {policy_logits, value}.
+		auto outputs = model->forward(boardTensor);
+		torch::Tensor valueTensor = std::get<1>(outputs);  // Value head output, shape [1, 1]
+
+		// Remove the batch dimension to get a single scalar.
+		double predictedValue = valueTensor.squeeze(0).item<double>();
+
+		// The value is typically in the range [-1, +1].
+		// If predictedValue > 0, consider it a win for the current player,
+		// if < 0, then a loss; otherwise, a draw.
+		if (predictedValue > 0.0)
+			return (exp_node->turn == BLACK ? Won::BLACK_PLAYER : Won::WHITE_PLAYER);
+		else if (predictedValue < 0.0)
+			return (exp_node->turn == BLACK ? Won::WHITE_PLAYER : Won::BLACK_PLAYER);
+		else
+			return Won::PLAYER_DRAW;
+	}
+	return Won::PLAYER_DRAW;
+}
 //select the nodes to form a path down the tree
 vnode* mcts::selection(vnode* const root)
 {
@@ -133,6 +217,73 @@ vnode* mcts::expansion(vnode* lfnode, const exp_mode& exp_mode)
 			// return the switched player child
 			vnode* child_tmp = createValidChild(lfnode, valid_child_count);
 			return child_tmp == nullptr? lfnode: child_tmp;
+		}
+		return child;
+	}
+	//std::cout << "asdasdasd";
+	//system("pause");
+	return nullptr;
+}
+
+vnode* mcts::expansion_ai(vnode* lfnode, const exp_mode& exp_mode)
+{
+	if (exp_mode == EXPANSION_FULL)
+	{
+		//create valid children from current lfnode
+		int valid_child_count = 0;
+		vnode* tmp_node = createValidChildren(lfnode, valid_child_count);
+		int nonce = valid_child_count > 0 ? getRandomNumber(0, valid_child_count - 1) : -1;
+		int count = 0;
+
+		
+		// if we unable to expand, might not be terminal yet so we retry by switching the turn, this
+		// is a hard re-set of the turn
+		if (tmp_node == nullptr)
+		{
+			std::lock_guard<std::recursive_mutex> lock(lfnode->node_mutex);
+
+			lfnode->turn = Side(!lfnode->turn);
+			vnode* switch_player_node = createValidChildren(lfnode, valid_child_count);
+			nonce = valid_child_count > 0 ? getRandomNumber(0, valid_child_count - 1) : -1;
+			// if switched player also fail means this is most probably a terminal state
+			if (switch_player_node == nullptr)
+			{
+				return lfnode;
+			}
+			else {
+				// revive the expansion process
+				tmp_node = switch_player_node;
+			}
+		}
+
+
+
+		// if there's some valid children
+		while (tmp_node != nullptr)
+		{
+			// return the random child
+			if (nonce == count)
+			{
+				return tmp_node;
+			}
+			tmp_node = tmp_node->get_next_sibling();
+			++count;
+		}
+	}
+	else if (exp_mode == EXPANSION_SINGLE)
+	{
+		int valid_child_count = 0;
+		vnode* child = createValidChild(lfnode, valid_child_count);
+		// if we unable to expand, might not be terminal yet so we retry by switching the turn, this
+		// is a hard re-set of the turn
+		if (child == nullptr)
+		{
+			std::lock_guard<std::recursive_mutex> lock(lfnode->node_mutex);
+
+			lfnode->turn = Side(!lfnode->turn);
+			// return the switched player child
+			vnode* child_tmp = createValidChild(lfnode, valid_child_count);
+			return child_tmp == nullptr ? lfnode : child_tmp;
 		}
 		return child;
 	}
@@ -285,15 +436,16 @@ vnode* mcts::get_best_move(vnode* root_node) {
 	vnode* tmp = children;
 
 	vnode* currentBestNode = nullptr;
-	double currentBestScore = -std::numeric_limits<double>::infinity();
+	//double currentBestScore = -std::numeric_limits<double>::infinity();
+	double currentBestVisits = -std::numeric_limits<uint64_t>::infinity();
 	while (tmp != nullptr)
 	{
 		std::lock_guard<std::recursive_mutex> lock(tmp->node_mutex);
 
-		if (tmp->sim_reward > currentBestScore)
+		if (tmp->sim_visits > currentBestVisits)
 		{
 			currentBestNode = tmp;
-			currentBestScore = tmp->sim_reward;
+			currentBestVisits = tmp->sim_visits;
 		}
 
 		std::cout << "\ncurrent visit:" << tmp->sim_visits<<", returns:"<<tmp->sim_reward<<",act:"<<tmp->action_taken;
@@ -362,6 +514,7 @@ vnode* mcts::createValidChildren(vnode* node, int& child_count)
 				Bitboard mod_cur_boardW = node->turn == BLACK ? future_flips | cur_boardW | (1ULL << sq) : ~future_flips & cur_boardW;
 				Bitboard mod_cur_boardB = node->turn == WHITE ? future_flips | cur_boardB | (1ULL << sq) : ~future_flips & cur_boardB;
 				std::lock_guard<std::recursive_mutex> lock(node->node_mutex);
+				// Forward pass to get priors and value prediction from the neural network
 
 				node->append_child(mod_cur_boardB, mod_cur_boardW, Side(!node->turn), sq);
 				++child_count;
@@ -452,4 +605,28 @@ bool mcts::haveValidChild(vnode* node)
 	}
 
 	return false;
+}
+
+std::vector<Square>  mcts::getValidMoves(Bitboard boardB, Bitboard boardW, bool turn)
+{
+	std::vector<Square> valids;
+	valids.reserve(32);
+
+	// Current player's occupancy if turn == BLACK, else White
+	Bitboard cur_side = turn == BLACK ? boardW : boardB;
+	Bitboard alt_side = turn == WHITE ? boardW : boardB;
+	Bitboard overlapped = boardB | boardW;
+
+	for (Square sq = SQ_A1; sq < SQ_H8; ++sq) {
+		// Skip squares already occupied
+		if (overlapped & (1ULL << sq)) {
+			continue;
+		}
+		// Use flipping logic to see if this is a valid move
+		Bitboard flips = actual_flips(sq, cur_side, alt_side);
+		if (flips != 0ULL) {
+			valids.push_back(sq);
+		}
+	}
+	return valids;
 }
