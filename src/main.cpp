@@ -1,96 +1,5 @@
 ﻿
 
-// this is multithread brute force mcts search system
-#if 0
-
-#include <algorithm>  // for std::max
-#include <cstdlib>    // for std::malloc, std::free
-#include <mutex>      // for std::mutex, std::lock_guard
-#include <vector>     // for std::vector
-#include <stdexcept>  // for std::bad_alloc
-#include <cassert>
-#include <iostream>
-#include <thread>
-#include <cstring> // For memset and memcpy
-#include <sstream>
-#include "../include/memoryPool.h"
-#include "../include/nodeManager.h"
-#include "../include/mcts.h"
-#include "../include/bitBoard.h"
-#include "../include/misc.h"
-
-using namespace bitboard;
-
-MemoryPool vnode::pool = MemoryPool(sizeof(vnode), 100000);
-std::stringstream vnode::ss;
-// Example function that each thread will run
-void mctsWorker(mcts* engine, vnode* root, int numSimulations) {
-	for (int i = 0; i < numSimulations; i++) {
-		// Standard MCTS steps
-		vnode* leaf = engine->selection(root);
-		vnode* expanded = engine->expansion(leaf, mcts::EXPANSION_FULL);
-		Won   result = engine->simulation(expanded);
-		engine->backup(expanded, result);
-	}
-}
-
-int main() {
-	// 1) Initialize bitboard environment, etc.
-	init_Bitboards();
-
-	// 2) Create root node
-	vnode* root = new vnode();
-	// Initialize root->boardB / root->boardW as needed
-	// root->boardB = ...
-	// root->boardW = ...
-	// root->turn   = WHITE;  // or BLACK
-	root->boardW = 0x20083c1a102800;
-	root->boardB = 0x106240806e0400;
-	//boardViewer(root_node->boardB, root_node->boardW);
-	//Won winner_iss = mc->simulation(root_node);
-
-	//system("pause");
-	root->turn = WHITE; //default as white first
-	// 3) Create an MCTS engine
-	mcts engine;
-
-	// 4) Decide how many total simulations want and how many threads
-	const int totalSimulations = 1000000;
-	const int numThreads = 16;
-
-	// 5) Distribute simulations among threads. 
-	//    E.g. each thread does totalSimulations / numThreads:
-	const int simsPerThread = totalSimulations / numThreads;
-	 
-	// 6) Launch threads
-	std::vector<std::thread> threadPool;
-	threadPool.reserve(numThreads);
-
-	for (int t = 0; t < numThreads; t++) {
-		// Capture 'engine' and 'root' by pointer to share them
-		threadPool.emplace_back(mctsWorker, &engine, root, simsPerThread);
-	}
-
-	// 7) Wait for all threads to finish
-	for (auto& thr : threadPool) {
-		thr.join();
-	}
-
-	// 8) After all simulations are done, retrieve the best move
-	vnode* bestMove = engine.get_best_move(root);
-
-	// 9) Print some info about the best move, or visualize
-	if (bestMove) {
-		std::cout << "\nBest move's visits: " << bestMove->sim_visits
-			<< ", reward: " << bestMove->sim_reward
-			<< ", action: " << (int)bestMove->action_taken << "\n";
-		engine.boardViewer(bestMove->boardB, bestMove->boardW);
-	}
-
-	return 0;
-}
-#endif
- 
 #if 1
 #include <torch/torch.h>
 #include <vector>
@@ -150,13 +59,10 @@ std::pair<Bitboard, Bitboard> FSM_makeMove(const Bitboard& boardB, const Bitboar
 	return { mod_cur_boardB, mod_cur_boardW };
 }
 
-void FSMtestPlay(int& countBlackWin, int& countWhiteWin)
+void FSMGame(int& countBlackWin, int& countWhiteWin, const int & mode)
 {
 	init_Bitboards();
 	// Device setup.
-
-	const int simulationsPerMove = 100;
-	const double c_puct = 1.5;
 
 	// Start from the standard board
 
@@ -170,8 +76,11 @@ void FSMtestPlay(int& countBlackWin, int& countWhiteWin)
 	int passCount = 0;
 
 	while (true) {
-		//std::cout << "\nTurn: " << (modeMadeTurn == BLACK ? "BLACK" : "WHITE") << std::endl;
-		//boardViewer(cur_boardB, cur_boardW);
+		if (mode == 1)
+		{
+			std::cout << "\nTurn: " << (modeMadeTurn == BLACK ? "BLACK" : "WHITE") << std::endl;
+			boardViewer(cur_boardB, cur_boardW);
+		}
 
 		// End game if board is full or both players pass
 		if (popcount(cur_boardB | cur_boardW) == 64 || passCount >= 2) {
@@ -262,19 +171,195 @@ void FSMtestPlay(int& countBlackWin, int& countWhiteWin)
 }
 
 
-void testFSM() {
+void testFSM(const int & playCount, const int & mode) {
 	int countBlackWin = 0;
 	int countWhiteWin = 0;
 	
-	for (int m = 0; m < 1000; ++m)
+	for (int m = 0; m < playCount; ++m)
 	{
-		FSMtestPlay(countBlackWin, countWhiteWin);
+		std::cout << "\n\033[32mcurrent play:" << m << ",prev wins white:" << countWhiteWin << ",prev wins black:" << countBlackWin << "\033[0m";
+
+		FSMGame(countBlackWin, countWhiteWin, mode);
 	}
 	std::cout << "\n total black win:" << countBlackWin;
 	std::cout << "\n total white win:" << countWhiteWin;
 	return;
 }
 
+void mctsWorker(mcts* engine, vnode* root, int numSimulations) {
+	for (int i = 0; i < numSimulations; i++) {
+		// Standard MCTS steps
+		vnode* leaf = engine->selection(root);
+		vnode* expanded = engine->expansion(leaf, mcts::EXPANSION_FULL);
+		Won   result = engine->simulation(expanded);
+		engine->backup(expanded, result);
+	}
+}
+std::pair<Bitboard, Bitboard> threadedMCTSEngineSearch(vnode * treeToSearch, const int & mode, const int & totalSimulations = 1000000) {
+	mcts engine;
+
+	// 4) Decide how many total simulations want and how many threads
+	const int numThreads = 16;
+
+	// 5) Distribute simulations among threads. 
+	//    E.g. each thread does totalSimulations / numThreads:
+	const int simsPerThread = totalSimulations / numThreads;
+
+	// 6) Launch threads
+	std::vector<std::thread> threadPool;
+	threadPool.reserve(numThreads);
+
+	for (int t = 0; t < numThreads; t++) {
+		// Capture 'engine' and 'root' by pointer to share them
+		threadPool.emplace_back(mctsWorker, &engine, treeToSearch, simsPerThread);
+	}
+
+	// 7) Wait for all threads to finish
+	for (auto& thr : threadPool) {
+		thr.join();
+	}
+
+	// 8) After all simulations are done, retrieve the best move
+	vnode* bestMove = engine.get_best_move(treeToSearch, mode);
+	if (bestMove != nullptr)
+		return { bestMove->boardB, bestMove->boardW };
+	else
+		return { -1, -1 };
+}
+
+void VanillaMCTSGame(int& countBlackWin, int& countWhiteWin, const int & mode)
+{
+	init_Bitboards();
+	// Device setup.
+
+	// Start from the standard board
+
+	uint64_t cur_boardB = 0x0000000810000000;
+	uint64_t cur_boardW = 0x0000001008000000;
+	Side modeMadeTurn = WHITE;
+
+	mcts engine;
+
+
+	int passCount = 0;
+
+	while (true) {
+		if (mode == 1)
+		{
+			std::cout << "\nTurn: " << (modeMadeTurn == BLACK ? "BLACK" : "WHITE") << std::endl;
+			boardViewer(cur_boardB, cur_boardW);
+		}
+
+		// End game if board is full or both players pass
+		if (popcount(cur_boardB | cur_boardW) == 64 || passCount >= 2) {
+			break;
+		}
+
+		// Check if current player has any valid moves
+		std::vector<Square> valids = engine.getValidMoves(cur_boardB, cur_boardW, modeMadeTurn);
+		if (valids.empty()) {
+			//std::cout << "[INFO] No valid moves. Passing turn.\n";
+
+			modeMadeTurn = Side(!modeMadeTurn);
+
+
+			passCount++;
+			continue;
+		}
+
+		passCount = 0;
+
+		if ((modeMadeTurn == BLACK)) { //
+			// random player --> baseline player
+			std::vector<Square> valids = engine.getValidMoves(cur_boardB, cur_boardW, modeMadeTurn);
+
+			//std::cout << "Valid moves: ";
+			//for (int mv : valids) std::cout << mv << " ";
+			//std::cout << "\nEnter move （0-63）: ";
+
+			int move_int;
+			//if (!(std::cin >> move_int)) {
+			//	std::cin.clear();
+			//	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			//	std::cout << "Invalid input. Try again.\n";
+			//	continue;
+			//}
+			int chosenRandom = getRandomNumber(0, valids.size() - 1); //simulate random player
+			Square move = valids[chosenRandom];
+			//std::cout << "\nmove taken:" << move;
+			if (std::find(valids.begin(), valids.end(), move) == valids.end()) {
+				//std::cout << "Invalid move. Try again.\n";
+				continue;
+			}
+			Bitboard  cur_side = modeMadeTurn == BLACK ? cur_boardW : cur_boardB;
+			Bitboard  alt_side = modeMadeTurn == WHITE ? cur_boardW : cur_boardB;
+			const Bitboard future_flips = actual_flips(move, cur_side, alt_side);
+			cur_boardW = modeMadeTurn == BLACK ? future_flips | cur_boardW | (1ULL << move) : ~future_flips & cur_boardW;
+			cur_boardB = modeMadeTurn == WHITE ? future_flips | cur_boardB | (1ULL << move) : ~future_flips & cur_boardB;
+			modeMadeTurn = Side(!modeMadeTurn);
+
+		}
+		else {
+			//  Vanilla MCTS Search
+
+			//std::cout << "[MCTS is choosing move...]\n";
+			vnode* root = new vnode();
+			root->boardB = cur_boardB;
+			root->boardW = cur_boardW;
+			root->turn = WHITE;
+
+			auto results = threadedMCTSEngineSearch(root, mode, 100000);
+			if (std::get<0>(results) == -1) {
+				//std::cout << "[ERROR] MCTS failed to select move. Passing.\n";
+				modeMadeTurn = Side(!modeMadeTurn);
+
+
+				// Clean up the MCTS tree:
+				vnode::BFS(root, vnode::OpType::PRUNE, true);
+				continue;
+			}
+
+			cur_boardB = std::get<0>(results);
+			cur_boardW = std::get<1>(results);
+			modeMadeTurn = Side(!modeMadeTurn);
+			// Clean up the MCTS tree:
+			vnode::BFS(root, vnode::OpType::PRUNE, true);
+		}
+	}
+
+	// ----- Game Over -----
+	//std::cout << "\nFinal board:\n";
+	//boardViewer(cur_boardB, cur_boardW);
+
+	Won winner = engine.check_winner(cur_boardB, cur_boardW);
+	if (winner == Won::BLACK_PLAYER)
+	{
+		countBlackWin += 1;
+		//std::cout << "\nWinner: BLACK\n";
+	}
+	else if (winner == Won::WHITE_PLAYER)
+	{
+		countWhiteWin += 1;
+		//std::cout << "\nWinner: WHITE\n";
+	}
+	else std::cout << "\nDraw!\n";
+}
+
+void testVanillaMCTS(const int & playCount, const int & mode)
+{
+	int countBlackWin = 0;
+	int countWhiteWin = 0;
+
+	for (int m = 0; m < playCount; ++m)
+	{
+		std::cout << "\n\033[32mcurrent play:" << m << ",prev wins white:" << countWhiteWin << ",prev wins black:" << countBlackWin<<"\033[0m";
+
+		VanillaMCTSGame(countBlackWin, countWhiteWin, mode);
+	}
+	std::cout << "\n total black win:" << countBlackWin;
+	std::cout << "\n total white win:" << countWhiteWin;
+	return;
+}
 
 MemoryPool vnode::pool = MemoryPool(sizeof(vnode), 100000);
 std::stringstream vnode::ss;
@@ -483,8 +568,9 @@ void main_training_loop(OthelloNet& model, mcts& engine, torch::Device device,
 	std::cout << "\n=== Training Completed! ===" << std::endl;
 }
 
-void testAI(const int & playcount, int & blackwins, int & whitewins)
+void testAI(const int & playcount, const int & mode)
 {
+	int blackwins = 0, whitewins = 0;
 	init_Bitboards();
 	// Device setup.
 	torch::Device device(torch::kCUDA);
@@ -493,7 +579,7 @@ void testAI(const int & playcount, int & blackwins, int & whitewins)
 
 	//load the model here
 	try {
-		torch::load(model, "othello_model_gen_35.pt");
+		torch::load(model, "othello_model_gen_49.pt");
 		model->eval();
 	}
 	catch (const c10::Error& e) {
@@ -509,7 +595,7 @@ void testAI(const int & playcount, int & blackwins, int & whitewins)
 	// Start from the standard board
 	for (int m = 0; m < playcount; ++m)
 	{
-		std::cout << "\ncurrent play:" << m<<",prev wins white:"<< whitewins<<",prev wins black:"<<blackwins;
+		std::cout << "\n\033[32mcurrent play:" << m << ",prev wins white:" << whitewins << ",prev wins black:" << blackwins << "\033[0m";
 		uint64_t cur_boardB = 0x0000000810000000;
 		uint64_t cur_boardW = 0x0000001008000000;
 		Side modeMadeTurn = WHITE;
@@ -520,8 +606,11 @@ void testAI(const int & playcount, int & blackwins, int & whitewins)
 		int passCount = 0;
 
 		while (true) {
-			//std::cout << "\nTurn: " << (modeMadeTurn == BLACK ? "BLACK" : "WHITE") << std::endl;
-			//boardViewer(cur_boardB, cur_boardW);
+			if (mode == 1) //debug mode
+			{
+				std::cout << "\nTurn: " << (modeMadeTurn == BLACK ? "BLACK" : "WHITE") << std::endl;
+				boardViewer(cur_boardB, cur_boardW);
+			}
 
 			// End game if board is full or both players pass
 			if (popcount(cur_boardB | cur_boardW) == 64 || passCount >= 2) {
@@ -559,7 +648,8 @@ void testAI(const int & playcount, int & blackwins, int & whitewins)
 				//}
 				int chosenRandom = getRandomNumber(0, valids.size() - 1); //simulate random player
 				Square move = valids[chosenRandom];
-				//std::cout << "\nmove taken:" << move;
+				if (mode == 1)
+					std::cout << "\nmove taken:" << move;
 				if (std::find(valids.begin(), valids.end(), move) == valids.end()) {
 					//std::cout << "Invalid move. Try again.\n";
 					continue;
@@ -588,14 +678,14 @@ void testAI(const int & playcount, int & blackwins, int & whitewins)
 					engine.update_prior(expanded);
 				}
 
-				vnode* best = engine.get_best_move(root);
+				vnode* best = engine.get_best_move(root, mode);
 				if (!best) {
 					//std::cout << "[ERROR] AI failed to select move. Passing.\n";
 					modeMadeTurn = Side(!modeMadeTurn);					  
 					continue;
 				}
-
-				//std::cout << "\n[AI played move : " << best->action_taken << "]\n";
+				if(mode == 1)
+					std::cout << "\n[AI played move : " << best->action_taken << "]\n";
 				cur_boardB = best->boardB;
 				cur_boardW = best->boardW;
 				vnode::BFS(root, vnode::OpType::PRUNE, true);
@@ -656,15 +746,63 @@ void trainSetup() {
 		400,   // simulationsPerMove
 		5);    // epochsPerGen
 }
-int main() {
-	int whitewins;
-	int blackwins;
 
-	testAI(1000, blackwins, whitewins);
-	std::cout << "\nblackwins:" << blackwins;
-	std::cout << "\nwhitewins:" << whitewins;
-	//trainSetup();
-	return 0;
+void showModeMenu() {
+	std::cout << "\033[34mOthello Self Evaluation Engine v1.0\033[0m\n";
+	std::cout << "======================\n";
+	std::cout << "    Choose the mode   \n";
+	std::cout << "======================\n";
+	std::cout << "1. Debug\n";
+	std::cout << "2. Evaluate\n";
+	std::cout << "Enter your choice: ";
+}
+void showMenu() {
+	std::cout << "\033[34mOthello Self Evaluation Engine v1.0\033[0m\n";
+	std::cout << "============\n";
+	std::cout << "    Menu   \n";
+	std::cout << "============\n";
+	std::cout << "1. Run Vanilla MCTS\n";
+	std::cout << "2. Run FSM\n";
+	std::cout << "3. Run AI\n";
+	std::cout << "0. Exit\n";
+	std::cout << "Enter your choice: ";
 }
 
+
+int main() {
+	int mode, choice;
+	const int iterations = 1000;
+
+	while (true) {
+
+		showModeMenu();
+		std::cin >> mode;
+
+		showMenu();
+		std::cin >> choice;
+
+		switch (choice) {
+		case 1:
+			testVanillaMCTS(iterations, mode);
+			break;
+		case 2:
+			testFSM(iterations, mode);
+			break;
+		case 3:
+			testAI(iterations, mode);
+			break;
+		case 0:
+			std::cout << "Exiting program.\n";
+			return 0;
+		default:
+			std::cout << "Invalid choice. Please try again.\n";
+		}
+
+		std::cout << "\nPress Enter to continue...";
+		std::cin.ignore(); // discard newline from previous input
+		std::cin.get();    // wait for Enter
+	}
+
+	return 0;
+}
 #endif

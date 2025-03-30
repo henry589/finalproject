@@ -32,7 +32,7 @@ public:
 	vnode* createValidChildren(vnode* node, int& child_count);
 	vnode* createValidChild(vnode* node, int& child_count);
 	// Function to get the best move based on visit count
-	vnode* get_best_move(vnode* root_node);
+	vnode* get_best_move(vnode* root_node, const int& mode);
 	bool haveValidChild(vnode* node);
 	Won check_winner(const Bitboard& blackBoard, const Bitboard& whiteBoard);
 	std::vector<Square>  mcts::getValidMoves(Bitboard boardB, Bitboard boardW, bool turn);

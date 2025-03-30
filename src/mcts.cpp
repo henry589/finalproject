@@ -429,7 +429,7 @@ Side win_side = winner_is == BLACK_PLAYER ? Side::BLACK : Side::WHITE;
 
 
 // Function to get the best move based on visit count
-vnode* mcts::get_best_move(vnode* root_node) {
+vnode* mcts::get_best_move(vnode* root_node, const int & mode) {
 	if (!root_node) return nullptr;
 
 	vnode * children = root_node->get_children();
@@ -448,7 +448,8 @@ vnode* mcts::get_best_move(vnode* root_node) {
 			currentBestVisits = tmp->sim_visits;
 		}
 
-		std::cout << "\ncurrent visit:" << tmp->sim_visits<<", returns:"<<tmp->sim_reward<<",act:"<<tmp->action_taken;
+		if(mode == 1)
+			std::cout << "\ncurrent visit:" << tmp->sim_visits<<", returns:"<<tmp->sim_reward<<",act:"<<tmp->action_taken;
 		tmp = tmp->get_next_sibling();
 	}
 	return currentBestNode;
