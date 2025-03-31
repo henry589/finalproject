@@ -743,7 +743,7 @@ void trainSetup() {
 	main_training_loop(model, engine, device,
 		50,    // totalGenerations
 		20,    // numEpisodesPerGen
-		400,   // simulationsPerMove
+		100,   // simulationsPerMove
 		5);    // epochsPerGen
 }
 

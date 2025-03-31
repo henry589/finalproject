@@ -1,5 +1,6 @@
 #ifndef BITBOARD_H
 #define BITBOARD_H
+// Magic bitboard technique adapted from Stockfish engine (https://stockfishchess.org)
 #include <bitset>
 #include <cassert>
 #include <random>

@@ -14,7 +14,7 @@ namespace bitboard {
 		Square to = Square(s + step);
 		return is_ok(to) && distance(s, to) <= 2 ? square_bb(to) : Bitboard(0);
 	}
-
+	// Magic bitboard technique adapted from Stockfish engine (https://stockfishchess.org)
 	void init_Bitboards()
 	{
 		for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
