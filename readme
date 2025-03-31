@@ -1,3 +1,1 @@
-compile with the following:
-
-g++ src/main.cpp src/memoryPool.cpp src/nodeManager.cpp -o test && ./test
+Use CMake version newer than 3.14 to build this project, on visual studio 2019, cpp version +17
